@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feed Coco | $PHP</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        /* --- DESIGN SYSTEM --- */
+        * { box-sizing: border-box; }
+
+        :root { 
+            --bg: #F4F4F0; 
+            --text-main: #1A1A1A; 
+            --accent: #00CC96; 
+            --danger: #FF4444;
+            --warn: #FFAA00;
+            --full: #9D00CC;
+        }
+        
+        body, html { 
+            margin: 0; padding: 0; 
+            width: 100%; height: 100%;
+            background: var(--bg); 
+            color: var(--text-main); 
+            font-family: 'Space Grotesk', sans-serif; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 1.5s ease; 
+        }
+
+        /* --- HEADER --- */
+        .header {
+            position: absolute; top: 20px; width: 100%;
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding: 0 5%; z-index: 50; 
+        }
+
+        .back-btn { 
+            text-decoration: none; color: var(--text-main); font-weight: 700; 
+            font-size: 1.2rem; text-transform: uppercase;
+            background: rgba(255,255,255,0.5); padding: 10px 20px; border-radius: 50px;
+        }
+
+        .metrics {
+            font-family: 'Courier New', monospace; text-align: right;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(5px);
+            padding: 15px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.1);
+            min-width: 160px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        .metric-row { margin-bottom: 5px; font-size: 0.9rem; }
+        .metric-val { font-weight: bold; }
+        
+        .status-critical { color: var(--danger); animation: pulse-fast 0.5s infinite; }
+        .status-hungry { color: var(--warn); }
+        .status-stable { color: var(--accent); }
+        .status-full { color: var(--full); }
+
+        @keyframes pulse-fast { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+        /* --- COCO CONTAINER --- */
+        .coco-container {
+            position: relative;
+            width: 300px; height: 300px;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 10;
+            margin-top: 80px; 
+        }
+
+        .coco-face {
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 8px solid white;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            background-color: #ddd;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* --- SPEECH BUBBLE --- */
+        .speech-bubble {
+            position: absolute;
+            top: -110px; 
+            background: white;
+            padding: 15px 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-main);
+            transform: scale(0);
+            transform-origin: bottom center;
+            pointer-events: none;
+            z-index: 9999; /* Always on top */
+            text-align: center;
+            max-width: 280px; 
+            min-width: 150px;
+        }
+        
+        .speech-bubble::after {
+            content: ''; position: absolute; bottom: -10px; left: 50%;
+            transform: translateX(-50%);
+            border-width: 10px 10px 0; border-style: solid;
+            border-color: white transparent transparent transparent;
+        }
+
+        /* --- ANIMATED TREAT --- */
+        .treat {
+            position: absolute; font-size: 4rem; top: -10%; z-index: 50; pointer-events: none;
+        }
+
+        /* --- BUTTON --- */
+        .btn-feed {
+            margin-top: 50px; padding: 25px 80px;
+            background: var(--text-main); color: white;
+            font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 700;
+            border-radius: 100px; border: none; cursor: pointer;
+            z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .btn-feed:active { transform: scale(0.95); background: var(--accent); color: black; }
+
+        @media (max-width: 480px) {
+            .coco-container { width: 220px; height: 220px; margin-top: 100px; }
+            .btn-feed { padding: 20px 60px; font-size: 1.2rem; width: 80%; margin-top: 30px; }
+            .speech-bubble { font-size: 0.9rem; padding: 10px 20px; top: -90px; }
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="sound-crunch" src="crunch.mp3"></audio>
+    <audio id="sound-critical" src="sfx_critical.mp3"></audio>
+    <audio id="sound-hungry" src="sfx_hungry.mp3"></audio>
+    <audio id="sound-stable" src="sfx_stable.mp3"></audio>
+    <audio id="sound-full" src="sfx_full.mp3"></audio>
+
+    <div class="header">
+        <a href="index.html" class="back-btn">< BACK</a>
+        <div class="metrics">
+            <div class="metric-row">SCORE: <span class="metric-val" id="score">0</span></div>
+            <div class="metric-row">SATURATION: <span class="metric-val" id="hunger-pct">50%</span></div>
+            <div class="metric-row">STATUS: <span class="metric-val status-hungry" id="status-text">HUNGRY</span></div>
+        </div>
+    </div>
+
+    <div class="coco-container">
+        <div class="speech-bubble" id="bubble">...</div>
+        <img src="hungry.jpg" class="coco-face" id="coco" alt="Coco">
+    </div>
+
+    <button class="btn-feed" id="feedBtn">FEED PHP</button>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            
+            // --- COMEDY ENGINE CONFIG ---
+            const lines = {
+                critical: [
+                    "I SEE THE LIGHT...", "TELL MY WIFE I LOVE HER!",
+                    "SYSTEM FAILURE: NO SNACKS!", "LOW BATTERY...",
+                    "WHY HAVE YOU FORSAKEN ME?", "AM I INVISIBLE?",
+                    "FADING FAST...", "SO... COLD..."
+                ],
+                hungry: [
+                    "Feed the beast!", "My ribs are touching...",
+                    "Don't make me beg.", "I smell bacon...",
+                    "Hangry mode: ACTIVATED.", "Error 404: Food Not Found",
+                    "Do I look like a joke?", "Wither away..."
+                ],
+                feeding: [ // While Stable (Happy eating)
+                    "Yum!", "More!", "Cronch.", "Delicious!", 
+                    "Nom nom.", "Good soup.", "Tasty!", "Keep 'em comin'!",
+                    "My fav!", "Gimme dat."
+                ],
+                stuffing: [ // NEW: While Full but NOT maxed (Reluctant eating)
+                    "Oof... okay.", "My diet starts now.", "Getting tight...",
+                    "So... full...", "I shouldn't...", "Just one more.",
+                    "Making room...", "Heavy breathing...", "I'm a sphere.",
+                    "Worth it."
+                ],
+                fullRefusal: [ // MAXED OUT (150%) - Rejection Lines
+                    "I AM EXPLODING!", "Call the crane...", "My hat is too tight!",
+                    "Have mercy!", "Belly... hurts...", "No more PHP please!",
+                    "Diets start tomorrow.", "Pop goes the weasel!",
+                    "Food coma incoming...", "Get that corn outta my face!",
+                    "I can't feel my legs.", "Roll me home.", "ABORT MISSION!",
+                    "I'm at capacity!", "System Overload.", "Look at me. I'm huge.",
+                    "No.", "Nope.", "Absolutely not.", "Go away food."
+                ]
+            };
+
+            // --- VARIABLES ---
+            const feedBtn = document.getElementById('feedBtn');
+            const scoreEl = document.getElementById('score');
+            const hungerPctEl = document.getElementById('hunger-pct');
+            const statusTextEl = document.getElementById('status-text');
+            const coco = document.getElementById('coco');
+            const bubble = document.getElementById('bubble');
+            
+            const sfx = {
+                crunch: document.getElementById('sound-crunch'),
+                critical: document.getElementById('sound-critical'),
+                hungry: document.getElementById('sound-hungry'),
+                stable: document.getElementById('sound-stable'),
+                full: document.getElementById('sound-full')
+            };
+
+            let score = 0;
+            let saturation = 50; 
+            let lastStatus = "HUNGRY"; 
+            let clickCount = 0; 
+            let gameActive = true;
+
+            // --- CONFIG ---
+            const MAX_SATURATION = 150; 
+            const FEED_VALUE = 4;       
+            const DECAY_SPEED = 1;      
+            const DECAY_RATE_MS = 800;  
+
+            // --- IDLE ANIM ---
+            gsap.to(coco, { scale: 1.03, duration: 1.5, yoyo: true, repeat: -1, ease: "sine.inOut" });
+
+            // --- GAME LOOP ---
+            setInterval(() => {
+                if (!gameActive) return;
+                if (saturation > 0) saturation -= DECAY_SPEED; 
+                updateState();
+            }, DECAY_RATE_MS); 
+
+            // --- STATE MACHINE ---
+            function updateState() {
+                let visualSat = saturation > 100 ? 100 : saturation;
+                hungerPctEl.innerText = visualSat + "%";
+                statusTextEl.className = "metric-val"; 
+                
+                let currentStatus = "";
+                if (saturation <= 20) currentStatus = "CRITICAL";
+                else if (saturation <= 50) currentStatus = "HUNGRY";
+                else if (saturation < 95) currentStatus = "STABLE";
+                else currentStatus = "FULL"; 
+
+                if (currentStatus !== lastStatus) {
+                    triggerStatusChange(currentStatus);
+                    lastStatus = currentStatus;
+                }
+                
+                statusTextEl.innerText = currentStatus === "CRITICAL" ? "CRITICAL ⚠️" : currentStatus;
+                statusTextEl.classList.add("status-" + currentStatus.toLowerCase());
+            }
+
+            // --- TRIGGER EVENTS (Status Change) ---
+            function triggerStatusChange(status) {
+                coco.src = status.toLowerCase() + ".jpg";
+                playSound(status.toLowerCase());
+
+                let pool = lines[status.toLowerCase()] || ["..."];
+                
+                // Special case for FULL to ensure good entry line
+                if (status === "FULL") pool = ["I am full Hoooman. Feed me later."];
+
+                let randomMsg = pool[Math.floor(Math.random() * pool.length)];
+
+                let bg = "#F4F4F0";
+                if (status === "CRITICAL") {
+                    bg = "#fff0f0";
+                    gsap.to(coco, { x: 3, duration: 0.05, yoyo: true, repeat: 10 });
+                } else if (status === "STABLE") {
+                    bg = "#F0FFF4";
+                } else if (status === "FULL") {
+                    bg = "#E6E6FA";
+                }
+
+                document.body.style.background = bg;
+                showBubble(randomMsg);
+            }
+
+            // --- FEEDING LOGIC ---
+            feedBtn.addEventListener('click', () => {
+                // 1. REFUSAL (Hard Cap 150%)
+                if (saturation >= MAX_SATURATION) {
+                    let pool = lines.fullRefusal;
+                    showBubble(pool[Math.floor(Math.random() * pool.length)]);
+                    gsap.to(coco, { rotation: 5, duration: 0.1, yoyo: true, repeat: 3 });
+                    return;
+                }
+                
+                spawnTreat();
+            });
+
+            function spawnTreat() {
+                const treat = document.createElement('div');
+                treat.classList.add('treat');
+                const snacks = ['🦴', '🍗', '🥩', '🍪'];
+                treat.innerHTML = snacks[Math.floor(Math.random() * snacks.length)];
+                document.body.appendChild(treat);
+
+                const randomX = (Math.random() - 0.5) * 150; 
+                gsap.set(treat, { x: randomX, y: -100, left: '50%' });
+
+                gsap.to(treat, {
+                    y: window.innerHeight / 2 - 80, 
+                    rotation: 720, 
+                    duration: 0.5,
+                    ease: "power2.in",
+                    onComplete: () => {
+                        treat.remove(); 
+                        score++;
+                        saturation += FEED_VALUE; 
+                        if (saturation > MAX_SATURATION) saturation = MAX_SATURATION;
+                        scoreEl.innerText = score;
+                        updateState(); 
+                        playSound('crunch');
+                        gsap.fromTo(coco, { scale: 1.15 }, { scale: 1, duration: 0.2, ease: "elastic.out(1, 0.3)" });
+                        
+                        // --- CHATTER LOGIC ---
+                        clickCount++;
+                        if (clickCount % 3 === 0) {
+                            showRandomChatter();
+                        }
+                    }
+                });
+            }
+
+            function showRandomChatter() {
+                let pool = [];
+                // FIXED LOGIC: If full, use "Stuffing" lines (Reluctant), NOT "Feeding" lines (Eager)
+                if (saturation >= 95) pool = lines.stuffing;
+                else if (saturation < 50) pool = lines.hungry; 
+                else pool = lines.feeding;
+
+                let msg = pool[Math.floor(Math.random() * pool.length)];
+                showBubble(msg);
+            }
+
+            // --- HELPERS ---
+            function playSound(type) {
+                Object.values(sfx).forEach(audio => { if(audio) audio.pause(); });
+                const target = sfx[type];
+                if (target) {
+                    target.currentTime = 0;
+                    target.play().catch(e => console.log("Audio play blocked", e));
+                }
+            }
+
+            function showBubble(text) {
+                bubble.innerText = text;
+                gsap.killTweensOf(bubble); 
+                gsap.to(bubble, { scale: 1, duration: 0.4, ease: "back.out(1.7)" });
+                // Hide after 2 seconds
+                gsap.to(bubble, { scale: 0, duration: 0.3, delay: 2, ease: "power2.in" });
+            }
+
+        });
+    </script>
+</body>
+</html>

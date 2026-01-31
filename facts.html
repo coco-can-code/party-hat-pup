@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bio-Data | $PHP</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        * { box-sizing: border-box; }
+        :root { --bg: #F4F4F0; --text: #1A1A1A; --accent: #00CC96; }
+
+        body {
+            margin: 0; background: var(--bg); color: var(--text);
+            font-family: 'Space Grotesk', sans-serif;
+            height: 100vh; overflow: hidden;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        /* --- HEADER --- */
+        .top-bar {
+            position: absolute; top: 0; left: 0; width: 100%;
+            padding: 30px 5%; display: flex; justify-content: space-between; align-items: center;
+            z-index: 100;
+        }
+        .back-link { text-decoration: none; color: var(--text); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .file-id { font-family: 'Courier New'; opacity: 0.5; }
+
+        /* --- DECK CONTAINER --- */
+        .deck-container {
+            position: relative;
+            width: 340px; height: 500px;
+            perspective: 1000px;
+        }
+
+        .card {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            
+            /* FIX: Solid Background & Hardware Acceleration */
+            background: #FFFFFF; 
+            transform: translateZ(0); 
+            backface-visibility: hidden;
+
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15); /* Stronger shadow */
+            border: 1px solid rgba(0,0,0,0.05);
+            display: flex; flex-direction: column; justify-content: space-between;
+            transform-origin: center bottom;
+            will-change: transform, filter;
+        }
+
+        /* CARD CONTENT STYLING */
+        .card-header {
+            display: flex; justify-content: space-between;
+            border-bottom: 2px solid var(--text);
+            padding-bottom: 15px; margin-bottom: 20px;
+        }
+        .fact-num { font-size: 3rem; font-weight: 700; color: var(--accent); line-height: 0.8; }
+        .fact-label { font-family: 'Courier New'; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        .fact-text { font-size: 1.8rem; font-weight: 600; line-height: 1.2; margin: 0; }
+        .fact-sub { font-size: 1rem; color: #666; margin-top: 15px; line-height: 1.4; }
+
+        .stamp {
+            position: absolute; bottom: 30px; right: 30px;
+            border: 2px solid var(--text); padding: 5px 10px;
+            font-family: 'Courier New'; font-weight: 700;
+            transform: rotate(-10deg); opacity: 0.3;
+        }
+
+        /* --- CONTROLS --- */
+        .controls {
+            margin-top: 50px;
+            display: flex; gap: 20px; align-items: center;
+            z-index: 100;
+        }
+        .btn-next {
+            padding: 15px 40px; background: var(--text); color: white;
+            border: none; border-radius: 100px; font-family: inherit; font-weight: 700;
+            cursor: pointer; transition: transform 0.1s;
+        }
+        .btn-next:active { transform: scale(0.95); }
+
+        .progress-bar {
+            width: 100px; height: 4px; background: rgba(0,0,0,0.1); border-radius: 10px; overflow: hidden;
+        }
+        .fill { width: 0%; height: 100%; background: var(--accent); transition: width 0.3s; }
+
+        /* IMAGE WITHIN CARD */
+        .mini-img {
+            width: 100%; height: 150px; object-fit: cover; border-radius: 10px; margin-bottom: 15px;
+            filter: grayscale(100%); mix-blend-mode: multiply; opacity: 0.8;
+        }
+
+        @media (max-width: 480px) {
+            .deck-container { width: 90%; height: 60vh; }
+            .fact-text { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="sfx" src="crunch.mp3"></audio>
+
+    <div class="top-bar">
+        <a href="index.html" class="back-link">< CLOSING_DOCK</a>
+        <div class="file-id">FILE_ID: 8821_C</div>
+    </div>
+
+    <div class="deck-container" id="deck">
+        </div>
+
+    <div class="controls">
+        <div class="progress-bar"><div class="fill" id="fill"></div></div>
+        <button class="btn-next" id="nextBtn">NEXT DATA ></button>
+    </div>
+
+    <script>
+        // --- THE DATA ---
+        const facts = [
+            { id: "01", title: "Security Clearance", text: "Coco has Level 5 Sudo Access.", sub: "He can override any household rule with a single puppy-eye command.", stamp: "TOP SECRET" },
+            { id: "02", title: "Enemy Identified", text: "The Vacuum Cleaner is public enemy #1.", sub: "Known alias: 'The Loud Eater'. Coco initiates tactical retreat immediately.", stamp: "THREAT_LVL_HIGH" },
+            { id: "03", title: "Sleep Efficiency", text: "Operates at 98% Nap Capacity.", sub: "Only wakes up for the sound of a cheese wrapper opening from 3 rooms away.", stamp: "DORMANT" },
+            { id: "04", title: "Gas Fees", text: "High Gas Fees Detected.", sub: "Usually occurs after broccoli consumption. Ventilation required immediately.", stamp: "BIO_HAZARD" },
+            { id: "05", title: "Financial Advice", text: "Buy High, Bark Low.", sub: "Coco's investment strategy involves burying assets in the backyard.", stamp: "FINANCIAL" },
+            { id: "06", title: "The Zoomies", text: "Physics Engine Failure.", sub: "Occurs at 9 PM. Friction coefficients are ignored. Wall collisions probable.", stamp: "CHAOS_MODE" }
+        ];
+
+        const deck = document.getElementById('deck');
+        const nextBtn = document.getElementById('nextBtn');
+        const fill = document.getElementById('fill');
+        const sfx = document.getElementById('sfx');
+
+        let currentIndex = 0;
+
+        // --- INIT CARDS ---
+        function initDeck() {
+            // Render in reverse so index 0 is on top
+            [...facts].reverse().forEach((fact, i) => {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                
+                // Content
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span class="fact-num">${fact.id}</span>
+                        <span class="fact-label">CONFIDENTIAL</span>
+                    </div>
+                    ${ i === facts.length - 1 ? `<img src="coco_main.jpg" class="mini-img">` : '' } 
+                    <p class="fact-text">${fact.text}</p>
+                    <p class="fact-sub">${fact.sub}</p>
+                    <div class="stamp">${fact.stamp}</div>
+                `;
+                
+                deck.appendChild(card);
+            });
+
+            updateStackVisuals();
+            updateProgress();
+        }
+
+        // --- ANIMATION LOGIC (THE FIX) ---
+        function updateStackVisuals() {
+            const cards = document.querySelectorAll('.card');
+            
+            cards.forEach((card, i) => {
+                // The logical index of this card relative to the top
+                // (facts.length - 1 - currentIndex) is the index of the current TOP card in the DOM
+                let domIndex = i;
+                let activeIndex = facts.length - 1 - currentIndex;
+                let offset = activeIndex - domIndex; // 0 = Top, 1 = Behind 1, etc.
+                
+                if (offset < 0) {
+                    // These are cards already flown away
+                    return; 
+                }
+
+                if (offset === 0) {
+                    // === TOP CARD (SHARP) ===
+                    gsap.to(card, {
+                        scale: 1,
+                        y: 0,
+                        opacity: 1,
+                        filter: "blur(0px) brightness(100%)", // Crystal clear
+                        rotation: 0,
+                        zIndex: 100,
+                        duration: 0.4
+                    });
+                } else {
+                    // === BACK CARDS (BLURRED) ===
+                    // We only animate the next 3 cards for performance
+                    if (offset <= 3) {
+                        gsap.to(card, {
+                            scale: 1 - (offset * 0.05), // Shrink slightly
+                            y: offset * 15,            // Move down
+                            opacity: 1,                // Solid opacity (no see-through)
+                            filter: "blur(5px) brightness(95%)", // The "Focus" Fix
+                            rotation: Math.random() * 2 - 1,
+                            zIndex: 100 - offset,
+                            duration: 0.4
+                        });
+                    } else {
+                        // Hide deep cards
+                        gsap.set(card, { opacity: 0 }); 
+                    }
+                }
+            });
+        }
+
+        function nextCard() {
+            if (currentIndex >= facts.length) {
+                resetDeck();
+                return;
+            }
+
+            if(sfx) { sfx.currentTime = 0; sfx.play().catch(()=>{}); }
+
+            const cards = document.querySelectorAll('.card');
+            const topCard = cards[cards.length - 1 - currentIndex];
+
+            // Fly Away Animation
+            gsap.to(topCard, {
+                x: 400,
+                y: -100,
+                rotation: 60,
+                opacity: 0,
+                duration: 0.5,
+                ease: "power2.in",
+                onComplete: () => {
+                    topCard.style.display = 'none';
+                }
+            });
+
+            currentIndex++;
+            updateStackVisuals();
+            updateProgress();
+
+            if(currentIndex === facts.length) {
+                nextBtn.innerText = "RELOAD DECK ↻";
+            }
+        }
+
+        function resetDeck() {
+            currentIndex = 0;
+            const cards = document.querySelectorAll('.card');
+            nextBtn.innerText = "NEXT DATA >";
+            
+            cards.forEach(card => {
+                card.style.display = 'flex';
+                // Reset positions instantly so they can animate in
+                gsap.set(card, { x: 0, y: 0, rotation: 0, opacity: 0, scale: 0.9 });
+            });
+
+            updateStackVisuals();
+            updateProgress();
+        }
+
+        function updateProgress() {
+            let pct = ((currentIndex) / facts.length) * 100;
+            fill.style.width = pct + "%";
+        }
+
+        nextBtn.addEventListener('click', nextCard);
+        
+        // Init
+        initDeck();
+
+    </script>
+</body>
+</html>

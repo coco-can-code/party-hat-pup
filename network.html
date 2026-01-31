@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Network | $PHP</title>
+    
+    <link rel="icon" type="image/png" href="coco_sticker_1.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * { box-sizing: border-box; }
+        :root { 
+            --bg: #F4F4F0; 
+            --text: #1A1A1A; 
+            --accent: #00CC96; 
+            --line: #cccccc;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background: var(--bg);
+            font-family: 'Space Grotesk', sans-serif;
+            overflow: hidden; /* No scroll bars */
+            touch-action: none; /* DISABLES DEFAULT SCROLLING ON MOBILE */
+            cursor: crosshair;
+        }
+
+        /* UI OVERLAY */
+        .ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 100;
+        }
+
+        .top-bar {
+            position: absolute; top: 0; left: 0; width: 100%;
+            padding: 40px 5%; display: flex; justify-content: space-between; align-items: center;
+            pointer-events: auto;
+        }
+
+        /* LIGHT MODE GLASS PILL BUTTON */
+        .glass-btn {
+            text-decoration: none; color: var(--text); font-weight: 700;
+            text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px;
+            background: rgba(255,255,255,0.5); 
+            backdrop-filter: blur(10px);
+            padding: 12px 24px; border-radius: 50px; 
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .glass-btn:hover { background: rgba(255,255,255,0.9); transform: scale(1.02); }
+
+        .sys-status { font-family: 'Courier New', monospace; font-size: 0.8rem; color: #666; }
+
+        /* HINT TEXT */
+        .hint {
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+            font-size: 0.9rem; color: #999; text-transform: uppercase; letter-spacing: 2px;
+            animation: pulse 2s infinite;
+            white-space: nowrap;
+        }
+
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+        /* CANVAS */
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* NODE POPUP */
+        .node-info {
+            position: absolute;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            width: 300px;
+            pointer-events: none;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: opacity 0.2s, transform 0.2s;
+            z-index: 50;
+        }
+        
+        .node-info.active { opacity: 1; transform: scale(1); }
+        .node-title { font-weight: 700; font-size: 1.2rem; margin-bottom: 5px; color: var(--text); }
+        .node-desc { font-size: 0.9rem; color: #666; line-height: 1.4; }
+        .node-status { 
+            display: inline-block; margin-top: 10px; padding: 4px 8px; 
+            background: var(--bg); border-radius: 4px; font-size: 0.7rem; font-weight: 700; color: var(--accent);
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 480px) {
+            .node-info { width: 80%; left: 10% !important; top: 10% !important; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="ui-layer">
+        <div class="top-bar">
+            <a href="index.html" class="glass-btn">< DASHBOARD</a>
+            <div class="sys-status">NEURAL_MAP: ONLINE</div>
+        </div>
+        <div class="hint">Drag Nodes to Reorganize</div>
+    </div>
+
+    <div class="node-info" id="popup">
+        <div class="node-title" id="p-title">Title</div>
+        <div class="node-desc" id="p-desc">Description</div>
+        <div class="node-status" id="p-status">PENDING</div>
+    </div>
+
+    <canvas id="network"></canvas>
+
+    <script>
+        const canvas = document.getElementById('network');
+        const ctx = canvas.getContext('2d');
+        const popup = document.getElementById('popup');
+        const pTitle = document.getElementById('p-title');
+        const pDesc = document.getElementById('p-desc');
+        const pStatus = document.getElementById('p-status');
+
+        let width, height;
+        
+        // --- DATA NODES (UPDATED SIZES) ---
+        const nodes = [
+            { id: 1, x: 0, y: 0, r: 60, label: "LAUNCH", type: "core", desc: "Token deployment on Solana. Liquidty burned. Contract renounced.", status: "COMPLETED" },
+            // INCREASED SIZE HERE (40 -> 55)
+            { id: 2, x: 0, y: 0, r: 55, label: "COMMUNITY", type: "sub", desc: "Telegram group setup. Twitter raids initialized.", status: "ACTIVE" },
+            { id: 3, x: 0, y: 0, r: 45, label: "GAME V1", type: "sub", desc: "Release of 'Feed PHP' interactive module.", status: "COMPLETED" },
+            // INCREASED SIZE HERE (50 -> 55)
+            { id: 4, x: 0, y: 0, r: 55, label: "MARKETING", type: "sub", desc: "KOL partnerships and organic meme spread.", status: "PENDING" },
+            { id: 5, x: 0, y: 0, r: 70, label: "PHASE 2", type: "core", desc: "CEX Listings and expanded ecosystem tools.", status: "LOCKED" },
+            { id: 6, x: 0, y: 0, r: 40, label: "NFTs", type: "sub", desc: "Party Hat Pups generative collection.", status: "PLANNING" },
+            { id: 7, x: 0, y: 0, r: 40, label: "MERCH", type: "sub", desc: "Physical hats for physical dogs.", status: "PLANNING" }
+        ];
+
+        // Connections
+        const links = [
+            { a: 0, b: 1 }, { a: 0, b: 2 }, { a: 0, b: 3 }, 
+            { a: 3, b: 4 }, { a: 4, b: 5 }, { a: 4, b: 6 } 
+        ];
+
+        // Physics Config
+        const springLength = 150; 
+        const k = 0.05; 
+        const friction = 0.90;
+
+        let mouse = { x: 0, y: 0, isDown: false, draggedNode: null };
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            
+            // Initial scatter
+            nodes.forEach(n => {
+                if(!n.init) {
+                    n.x = width/2 + (Math.random() - 0.5) * 100;
+                    n.y = height/2 + (Math.random() - 0.5) * 100;
+                    n.vx = 0; n.vy = 0;
+                    n.init = true;
+                }
+            });
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        // --- UNIFIED INPUT HANDLER ---
+        function getPointerPos(e) {
+            if(e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+            return { x: e.clientX, y: e.clientY };
+        }
+
+        function handleStart(e) {
+            const pos = getPointerPos(e);
+            
+            // Check collision
+            nodes.forEach(n => {
+                const dx = pos.x - n.x;
+                const dy = pos.y - n.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                // Allow slightly larger hit area on mobile
+                if (dist < n.r + 10) {
+                    mouse.isDown = true;
+                    mouse.draggedNode = n;
+                    updatePopup(n, pos.x, pos.y);
+                }
+            });
+        }
+
+        function handleMove(e) {
+            const pos = getPointerPos(e);
+            mouse.x = pos.x;
+            mouse.y = pos.y;
+            
+            if (mouse.isDown && mouse.draggedNode) {
+                e.preventDefault(); 
+                mouse.draggedNode.x = mouse.x;
+                mouse.draggedNode.y = mouse.y;
+                mouse.draggedNode.vx = 0;
+                mouse.draggedNode.vy = 0;
+                updatePopup(mouse.draggedNode, mouse.x, mouse.y);
+            } else {
+                if(!e.touches) {
+                    let hovering = false;
+                    nodes.forEach(n => {
+                        const dx = mouse.x - n.x;
+                        const dy = mouse.y - n.y;
+                        if (Math.sqrt(dx*dx + dy*dy) < n.r) {
+                            document.body.style.cursor = 'pointer';
+                            hovering = true;
+                        }
+                    });
+                    if (!hovering) document.body.style.cursor = 'crosshair';
+                }
+            }
+        }
+
+        function handleEnd() {
+            mouse.isDown = false;
+            mouse.draggedNode = null;
+            popup.classList.remove('active'); 
+        }
+
+        // --- LISTENERS ---
+        canvas.addEventListener('mousedown', handleStart);
+        canvas.addEventListener('touchstart', handleStart, { passive: false });
+
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('touchmove', handleMove, { passive: false }); 
+
+        window.addEventListener('mouseup', handleEnd);
+        window.addEventListener('touchend', handleEnd);
+
+        function updatePopup(n, x, y) {
+            pTitle.innerText = n.label;
+            pDesc.innerText = n.desc;
+            pStatus.innerText = n.status;
+            
+            if(window.innerWidth < 600) {
+                // Mobile CSS handles position
+            } else {
+                popup.style.left = (x + 20) + "px";
+                popup.style.top = (y + 20) + "px";
+            }
+            popup.classList.add('active');
+        }
+
+        // --- PHYSICS ENGINE ---
+        function update() {
+            links.forEach(link => {
+                const nodeA = nodes[link.a];
+                const nodeB = nodes[link.b];
+                
+                const dx = nodeB.x - nodeA.x;
+                const dy = nodeB.y - nodeA.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if (dist === 0) return;
+
+                const force = (dist - springLength) * k;
+                const fx = (dx / dist) * force;
+                const fy = (dy / dist) * force;
+
+                if (nodeA !== mouse.draggedNode) { nodeA.vx += fx; nodeA.vy += fy; }
+                if (nodeB !== mouse.draggedNode) { nodeB.vx -= fx; nodeB.vy -= fy; }
+            });
+
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    const a = nodes[i];
+                    const b = nodes[j];
+                    const dx = b.x - a.x;
+                    const dy = b.y - a.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    const minDist = a.r + b.r + 20;
+
+                    if (dist < minDist && dist > 0) {
+                        const force = (minDist - dist) * 0.5; 
+                        const fx = (dx / dist) * force;
+                        const fy = (dy / dist) * force;
+
+                        if (a !== mouse.draggedNode) { a.vx -= fx; a.vy -= fy; }
+                        if (b !== mouse.draggedNode) { b.vx += fx; b.vy += fy; }
+                    }
+                }
+            }
+
+            nodes.forEach(n => {
+                if (n === mouse.draggedNode) return;
+                const dx = width/2 - n.x;
+                const dy = height/2 - n.y;
+                n.vx += dx * 0.005; 
+                n.vy += dy * 0.005;
+
+                n.x += n.vx;
+                n.y += n.vy;
+                n.vx *= friction;
+                n.vy *= friction;
+            });
+        }
+
+        // --- RENDER ---
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.strokeStyle = '#cccccc';
+            ctx.lineWidth = 2;
+            links.forEach(link => {
+                const a = nodes[link.a];
+                const b = nodes[link.b];
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.lineTo(b.x, b.y);
+                ctx.stroke();
+            });
+
+            nodes.forEach(n => {
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+                
+                if (n.type === "core") {
+                    ctx.fillStyle = "#1A1A1A";
+                    ctx.strokeStyle = "#1A1A1A";
+                } else {
+                    ctx.fillStyle = "#FFFFFF";
+                    ctx.strokeStyle = "#1A1A1A";
+                }
+                
+                ctx.fill();
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                ctx.fillStyle = n.type === "core" ? "#FFFFFF" : "#1A1A1A";
+                ctx.font = "bold 14px 'Space Grotesk'";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(n.label, n.x, n.y);
+            });
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+        loop();
+
+    </script>
+</body>
+</html>
