@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SECURE ACCESS | $PHP</title>
+    
+    <link rel="icon" type="image/png" href="coco_sticker_1.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        * { box-sizing: border-box; user-select: none; }
+        :root { 
+            --bg: #0A0A0A; 
+            --metal: #1A1A1A;
+            --accent: #00CC96; 
+            --text: #E0E0E0;
+            --indicator: #FF4444;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background: var(--bg);
+            font-family: 'Space Grotesk', sans-serif;
+            overflow: hidden;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            color: var(--text);
+        }
+
+        /* --- UI OVERLAY --- */
+        .ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 10;
+        }
+
+        .top-bar {
+            position: absolute; top: 0; left: 0; width: 100%;
+            padding: 40px 5%; display: flex; justify-content: space-between; align-items: center;
+            pointer-events: auto;
+        }
+
+        /* DARK MODE GLASS PILL BUTTON */
+        .glass-btn {
+            text-decoration: none; color: #E0E0E0; font-weight: 700;
+            text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px;
+            background: rgba(255,255,255,0.1); 
+            backdrop-filter: blur(10px);
+            padding: 12px 24px; border-radius: 50px; 
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.2s ease;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .glass-btn:hover { 
+            background: rgba(255,255,255,0.2); 
+            color: var(--accent); border-color: var(--accent); 
+        }
+        
+        .security-badge { 
+            font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; 
+            padding: 5px 10px; border: 1px solid #333; color: #666; border-radius: 4px; 
+        }
+
+        /* --- THE VAULT MECHANISM --- */
+        .vault-container {
+            position: relative;
+            width: 350px; height: 350px;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        #tick-ring {
+            position: absolute; width: 100%; height: 100%;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .dial {
+            width: 260px; height: 260px;
+            background: radial-gradient(130% 130% at 50% 50%, #2a2a2a 0%, #000000 100%);
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 
+                0 10px 30px rgba(0,0,0,0.5),
+                inset 0 1px 1px rgba(255,255,255,0.1);
+            cursor: grab;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 5;
+        }
+        
+        .dial:active { cursor: grabbing; }
+
+        .knob-center {
+            width: 100px; height: 100px;
+            background: #111;
+            border-radius: 50%;
+            position: absolute;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            display: flex; justify-content: center; align-items: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            color: #444;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .knob-center.active { color: var(--accent); text-shadow: 0 0 10px rgba(0,204,150,0.5); }
+
+        .marker {
+            position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+            width: 4px; height: 15px; background: var(--indicator);
+            border-radius: 2px; box-shadow: 0 0 5px var(--indicator);
+            z-index: 20;
+        }
+
+        .led-panel {
+            position: absolute; bottom: -80px;
+            display: flex; gap: 15px;
+        }
+        
+        .led {
+            width: 12px; height: 12px; background: #222;
+            border-radius: 50%; border: 1px solid #333;
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+        
+        .led.success { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+        .led.fail { background: var(--indicator); box-shadow: 0 0 10px var(--indicator); }
+
+        .hint-text {
+            margin-top: 120px;
+            font-family: 'JetBrains Mono', monospace;
+            color: #444; font-size: 0.8rem;
+            text-align: center;
+        }
+
+        /* --- UNLOCKED CONTENT (WHITEPAPER) --- */
+        #unlocked-content {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #F4F4F0; 
+            z-index: 100;
+            display: flex; flex-direction: column; align-items: center;
+            transform: translateY(100%);
+            color: #1A1A1A;
+            overflow-y: auto; 
+            padding: 50px 20px;
+        }
+
+        .wp-container { max-width: 600px; width: 100%; text-align: left; }
+        .wp-header { border-bottom: 2px solid #1A1A1A; padding-bottom: 20px; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .wp-title { font-size: 3rem; font-weight: 700; line-height: 1; letter-spacing: -1px; }
+        .wp-badge { background: #1A1A1A; color: #fff; padding: 5px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; text-transform: uppercase; }
+        
+        .wp-section { margin-bottom: 40px; }
+        .wp-h2 { font-family: 'JetBrains Mono', monospace; font-size: 1rem; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; font-weight: 700; }
+        .wp-p { font-size: 1.1rem; line-height: 1.6; color: #333; margin-bottom: 15px; }
+        
+        .btn-black { 
+            display: inline-block; margin-top: 20px; padding: 15px 30px; 
+            background: #1A1A1A; color: #fff; text-decoration: none; border-radius: 50px; font-weight: 700; 
+            transition: transform 0.2s;
+        }
+        .btn-black:hover { transform: scale(1.05); }
+
+        .stamp {
+            position: absolute; top: 100px; right: 20px;
+            border: 4px solid #FF4444; color: #FF4444;
+            padding: 10px 20px; font-family: 'Courier New', monospace;
+            font-weight: 700; font-size: 1.5rem; text-transform: uppercase;
+            transform: rotate(-15deg); opacity: 0.3; pointer-events: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="ui-layer">
+        <div class="top-bar">
+            <a href="index.html" class="glass-btn">< DASHBOARD</a>
+            <div class="security-badge">SECURE_LEVEL: MAX</div>
+        </div>
+    </div>
+
+    <div class="marker"></div>
+
+    <div class="vault-container">
+        <svg id="tick-ring" viewBox="0 0 350 350"></svg>
+
+        <div class="dial" id="dial">
+            <div style="position: absolute; top: 10px; width: 8px; height: 8px; background: #555; border-radius: 50%;"></div>
+        </div>
+
+        <div class="knob-center" id="readout">0</div>
+
+        <div class="led-panel">
+            <div class="led" id="led-1"></div>
+            <div class="led" id="led-2"></div>
+            <div class="led" id="led-3"></div>
+        </div>
+    </div>
+
+    <div class="hint-text">
+        SEQ: 15 - 30 - 45<br>
+        <span style="opacity: 0.5;">(Hold to register)</span>
+    </div>
+
+    <div id="unlocked-content">
+        <div class="wp-container">
+            <div class="stamp">CONFIDENTIAL</div>
+            
+            <div class="wp-header">
+                <div class="wp-title">The PHP<br>Manifesto</div>
+                <div class="wp-badge">DOC_V1.0</div>
+            </div>
+
+            <div class="wp-section">
+                <div class="wp-h2">01. Abstract</div>
+                <div class="wp-p">Party Hat Pup ($PHP) represents the intersection of high-performance data engineering and absolute serenity. In a market defined by chaos, we engineer calm.</div>
+                <div class="wp-p">Our mission is to tokenize the feeling of a beagle napping in a sunbeam, secured by the immutable speed of the Solana blockchain.</div>
+            </div>
+
+            <div class="wp-section">
+                <div class="wp-h2">02. Tokenomics</div>
+                <div class="wp-p"><strong>Total Supply:</strong> 1,000,000,000</div>
+                <div class="wp-p"><strong>Tax:</strong> 0/0 (Engineered Efficiency)</div>
+                <div class="wp-p"><strong>Liquidity:</strong> Burned. Permanently inaccessible, like a ball thrown under the couch.</div>
+            </div>
+
+            <div style="text-align: center; margin-top: 50px; padding-bottom: 50px;">
+                <a href="https://t.me/YOUR_TELEGRAM" class="btn-black">ENTER WAR ROOM</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. SETUP ---
+        const dial = document.getElementById('dial');
+        const readout = document.getElementById('readout');
+        const tickRing = document.getElementById('tick-ring');
+        const leds = [document.getElementById('led-1'), document.getElementById('led-2'), document.getElementById('led-3')];
+        const unlockScreen = document.getElementById('unlocked-content');
+
+        // Game State
+        const targetCombo = [15, 30, 45];
+        let currentStage = 0;
+        let rotation = 0;
+        let currentValue = 0;
+        let isDragging = false;
+        let holdTimer = null;
+
+        // --- 2. DRAW TICKS (Procedural Generation) ---
+        const ns = "http://www.w3.org/2000/svg";
+        const center = 175;
+        const radius = 160;
+
+        for (let i = 0; i < 60; i++) {
+            const angle = (i * 6) * (Math.PI / 180); // 6 degrees per tick
+            const isMajor = i % 5 === 0;
+            const length = isMajor ? 15 : 8;
+            const thickness = isMajor ? 2 : 1;
+            const color = isMajor ? "#666" : "#333";
+
+            const x1 = center + Math.sin(angle) * (radius - length);
+            const y1 = center - Math.cos(angle) * (radius - length);
+            const x2 = center + Math.sin(angle) * radius;
+            const y2 = center - Math.cos(angle) * radius;
+
+            const line = document.createElementNS(ns, "line");
+            line.setAttribute("x1", x1); line.setAttribute("y1", y1);
+            line.setAttribute("x2", x2); line.setAttribute("y2", y2);
+            line.setAttribute("stroke", color);
+            line.setAttribute("stroke-width", thickness);
+            tickRing.appendChild(line);
+
+            // Numbers
+            if(isMajor) {
+                const textR = radius + 20;
+                const tx = center + Math.sin(angle) * textR;
+                const ty = center - Math.cos(angle) * textR;
+                const text = document.createElementNS(ns, "text");
+                text.setAttribute("x", tx); text.setAttribute("y", ty);
+                text.setAttribute("fill", "#666");
+                text.setAttribute("font-family", "JetBrains Mono");
+                text.setAttribute("font-size", "10");
+                text.setAttribute("text-anchor", "middle");
+                text.setAttribute("dominant-baseline", "middle");
+                // Remap angle to clock numbers (0 at top)
+                let num = Math.round(i); 
+                text.textContent = num;
+                tickRing.appendChild(text);
+            }
+        }
+
+        // --- 3. AUDIO ENGINE (Procedural Sound) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playTick() {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            // Physical "Click" Sound Synthesis
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.03);
+            
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.04);
+
+            // Haptics for Mobile
+            if(navigator.vibrate) navigator.vibrate(5);
+        }
+
+        function playSuccess() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(880, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+
+        // --- 4. PHYSICS & LOGIC ---
+        let startAngle = 0;
+        let currentRot = 0;
+        let lastValue = -1;
+
+        function getAngle(e) {
+            const box = dial.getBoundingClientRect();
+            const center_x = box.left + box.width / 2;
+            const center_y = box.top + box.height / 2;
+            const x = (e.touches ? e.touches[0].clientX : e.clientX) - center_x;
+            const y = (e.touches ? e.touches[0].clientY : e.clientY) - center_y;
+            return Math.atan2(y, x) * (180 / Math.PI);
+        }
+
+        function updateDial() {
+            // Apply Rotation
+            dial.style.transform = `rotate(${currentRot}deg)`;
+            
+            // Calculate Value (0-60) based on rotation
+            // Normalize rotation to 0-360 positive
+            let normalizedRot = (currentRot + 90) % 360; 
+            if(normalizedRot < 0) normalizedRot += 360;
+            
+            // Map 360 degrees to 60 units
+            let val = Math.round(normalizedRot / 6);
+            if (val === 60) val = 0;
+
+            if (val !== lastValue) {
+                lastValue = val;
+                readout.innerText = val;
+                playTick();
+                checkCombination(val);
+            }
+        }
+
+        // --- 5. COMBINATION CHECKER ---
+        function checkCombination(val) {
+            // Reset timer on movement
+            clearTimeout(holdTimer);
+            readout.classList.remove('active');
+
+            // Wait for user to hold value for 0.5s
+            holdTimer = setTimeout(() => {
+                if (val === targetCombo[currentStage]) {
+                    // Success Step
+                    playSuccess();
+                    leds[currentStage].classList.add('success');
+                    readout.classList.add('active');
+                    currentStage++;
+
+                    if (currentStage >= targetCombo.length) {
+                        unlockVault();
+                    }
+                }
+            }, 500);
+        }
+
+        function unlockVault() {
+            setTimeout(() => {
+                gsap.to(unlockScreen, {
+                    y: "0%",
+                    duration: 1,
+                    ease: "power4.out"
+                });
+            }, 500);
+        }
+
+        // --- 6. EVENT LISTENERS ---
+        const handleStart = (e) => {
+            isDragging = true;
+            startAngle = getAngle(e) - currentRot;
+            if(audioCtx.state === 'suspended') audioCtx.resume(); // Unlock audio context
+        };
+
+        const handleMove = (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const angle = getAngle(e);
+            currentRot = angle - startAngle;
+            updateDial();
+        };
+
+        const handleEnd = () => {
+            isDragging = false;
+        };
+
+        dial.addEventListener('mousedown', handleStart);
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleEnd);
+
+        dial.addEventListener('touchstart', handleStart, {passive: false});
+        window.addEventListener('touchmove', handleMove, {passive: false});
+        window.addEventListener('touchend', handleEnd);
+
+    </script>
+</body>
+</html>

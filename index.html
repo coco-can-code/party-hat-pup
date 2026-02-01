@@ -115,7 +115,13 @@
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-15px); } 100% { transform: translateY(0px); } }
         
         /* DESKTOP POSITION (RIGHT) */
-        .s-2 { top: 30%; right: 15%; width: 220px; transform: rotate(-10deg); animation-delay: 1.5s; }
+        .s-2 { 
+            top: 8%;       
+            right: 5%;     
+            width: 550px;  
+            transform: rotate(-10deg); 
+            animation-delay: 1.5s; 
+        }
 
         /* --- 6. CURSOR --- */
         .cursor-dot { width: 8px; height: 8px; background: var(--text-main); position: fixed; border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); }
@@ -132,9 +138,8 @@
             height: 90vh; 
             display: flex; 
             flex-direction: column; 
-            justify-content: center;
-            padding-top: 100px;
-            /* Desktop: Shift Text Right */
+            justify-content: flex-start; 
+            padding-top: 15vh;  /* <--- CHANGED: Reduced from 25vh to 15vh to pull text UP */
             padding-left: 8%; 
             padding-right: 5%;
         }
@@ -149,7 +154,6 @@
             line-height: 0.85; 
             margin: 0;
             z-index: 5;
-            /* Desktop: Shift Text Right */
             margin-left: 8%; 
         }
         
@@ -161,11 +165,22 @@
 
         .tag { padding: 8px 16px; border: 1px solid rgba(0,0,0,0.1); border-radius: 50px; font-size: 14px; text-transform: uppercase; margin-bottom: 30px; display: inline-block; color: var(--text-sub); }
 
+        /* BUTTON CONTAINER */
+        .hero-btn-container {
+            margin-top: 60px; /* Default Desktop Gap */
+            text-align: center;
+            width: 100%;
+            position: relative;
+            z-index: 20; 
+        }
+
         /* --- 8. TICKER STRIP --- */
         .marquee-strip {
             width: 100%; overflow: hidden; border-top: 1px solid rgba(0,0,0,0.1); border-bottom: 1px solid rgba(0,0,0,0.1);
             padding: 20px 0; margin-bottom: 50px; background: var(--bg); display: flex; user-select: none; position: relative; z-index: 10;
+            margin-top: 60px;
         }
+        
         .marquee-track { display: flex; white-space: nowrap; animation: scroll 20s linear infinite; }
         .marquee-item {
             font-size: 1.2rem; font-weight: 700; text-transform: uppercase; padding: 0 40px;
@@ -184,14 +199,17 @@
         .right-card { flex: 1; }
         .bento-card:hover { transform: translateY(-5px); }
         
-        /* --- MOBILE RESPONSIVENESS FIXES (THE FIX) --- */
+        /* --- MOBILE RESPONSIVENESS FIXES --- */
         @media (max-width: 768px) {
             
-            /* 1. TEXT STAYS LEFT (Safe Zone) */
+            /* 1. TEXT STAYS LEFT */
             .hero-section {
                 padding-left: 5% !important; 
                 padding-right: 0 !important;
+                padding-top: 120px !important; 
                 align-items: flex-start !important; 
+                height: auto !important;
+                min-height: 70vh;
             }
             
             .hero-title { 
@@ -199,16 +217,23 @@
                 line-height: 0.9; 
                 margin-left: 0 !important; 
                 text-align: left !important; 
-                max-width: 60%; /* Stop text at 60% so it doesn't overlap dog */
+                max-width: 65%; 
             }
             
-            /* 2. DOG MOVES LEFT (But stays UP) */
+            /* 2. DOG MOVES UP & LEFT */
             .s-2 { 
                 width: 140px; 
-                top: 22%; /* Restored to Higher Position (No pulling down) */
-                right: 10%; /* Moved Left (Away from edge) */
+                top: 18%; 
+                right: 5%; 
             } 
             
+            /* 3. BUTTON PUSHED DOWN */
+            .hero-btn-container {
+                margin-top: 80px !important; 
+                margin-bottom: 20px;
+            }
+
+            .marquee-strip { margin-top: 20px !important; }
             .bento-grid { display: flex !important; flex-direction: column; height: auto; gap: 15px; }
             .bento-card { min-height: 300px; padding: 30px; }
             .right-column { height: auto; gap: 15px; }
@@ -279,7 +304,7 @@
         <h1 class="hero-title"><span class="reveal-text">HAT</span></h1>
         <h1 class="hero-title"><span class="reveal-text" style="color: var(--accent);">PUP</span></h1>
         
-        <div style="margin-top: 60px; text-align: center; width: 100%;">
+        <div class="hero-btn-container">
             <a href="https://jupiter.ag" class="btn-magnet magnet-target">Initialize Dashboard</a>
         </div>
     </section>
@@ -516,6 +541,20 @@
             }
             lastScrollY = currentScrollY;
         });
+
+        // --- 6. STICKER BARK INTERACTION ---
+        const mainSticker = document.getElementById('sticker-2');
+        const barkSfx = document.getElementById('bark-audio');
+
+        if (mainSticker && barkSfx) {
+            mainSticker.addEventListener('click', () => {
+                barkSfx.currentTime = 0;
+                barkSfx.play().catch(() => {});
+                
+                // Add a little visual "squish" on tap
+                gsap.to(mainSticker, { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1 });
+            });
+        }
 
     </script>
 </body>
