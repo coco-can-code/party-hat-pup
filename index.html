@@ -36,6 +36,45 @@
             overflow-x: hidden;
             cursor: none;
             -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.5s ease;
+        }
+
+        /* --- NAP MODE STYLES (NEW) --- */
+        #nap-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(10, 10, 10, 0.90); /* Deep dark overlay */
+            z-index: 999; /* Below sticker when napping, above content */
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.8s ease;
+        }
+
+        /* When Napping is Active */
+        body.napping #nap-overlay { opacity: 1; pointer-events: auto; }
+        
+        /* Spotlight the Dog */
+        body.napping .sticker-container { 
+            z-index: 1000; 
+            filter: drop-shadow(0 0 30px rgba(0, 204, 150, 0.6)); /* Green glow */
+        }
+
+        /* Zzz Bubbles */
+        .zzz-container {
+            position: absolute;
+            top: -20px; 
+            right: 80px; /* Position near head */
+            width: 50px; height: 100px;
+            pointer-events: none;
+            z-index: 1001;
+        }
+        
+        .zzz {
+            position: absolute;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            color: var(--accent);
+            font-size: 2rem;
+            opacity: 0;
         }
 
         /* --- 2. PRELOADER --- */
@@ -114,7 +153,7 @@
         .sticker-container img { width: 100%; display: block; pointer-events: none; }
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-15px); } 100% { transform: translateY(0px); } }
         
-        /* DESKTOP POSITION (RIGHT) */
+        /* DESKTOP POSITION (RIGHT) - 8% TOP */
         .s-2 { 
             top: 8%;       
             right: 5%;     
@@ -139,7 +178,7 @@
             display: flex; 
             flex-direction: column; 
             justify-content: flex-start; 
-            padding-top: 15vh;  /* <--- CHANGED: Reduced from 25vh to 15vh to pull text UP */
+            padding-top: 15vh;
             padding-left: 8%; 
             padding-right: 5%;
         }
@@ -264,6 +303,8 @@
 </head>
 <body>
 
+    <div id="nap-overlay"></div>
+
     <div id="god-terminal">
         <div id="terminal-output">
             <div class="log-entry">COCO_CORE v1.0 [Secure Connection Established]</div>
@@ -292,6 +333,7 @@
     </nav>
 
     <div class="sticker-container s-2" id="sticker-2" data-speed="0.8"> 
+        <div class="zzz-container"></div>
         <img src="coco_sticker_2.png" alt="S2"> 
     </div>
 
@@ -408,15 +450,7 @@
         });
 
         function initMainAnimations() {
-            // UPDATED: Animate Opacity + Y instead of mask reveal to prevent clipping
-            gsap.to(".reveal-text", { 
-                y: 0, 
-                opacity: 1, 
-                duration: 1.5, 
-                stagger: 0.2, 
-                ease: "power4.out", 
-                delay: 0.2 
-            });
+            gsap.to(".reveal-text", { y: 0, opacity: 1, duration: 1.5, stagger: 0.2, ease: "power4.out", delay: 0.2 });
             gsap.from(".bento-card", { scrollTrigger: { trigger: ".bento-grid", start: "top 80%" }, y: 100, opacity: 0, duration: 1, stagger: 0.2, ease: "power2.out" });
         }
 
@@ -555,6 +589,99 @@
                 gsap.to(mainSticker, { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1 });
             });
         }
+
+        /* =========================================================
+           --- 7. GOD TIER FEATURE: THE IDLE NAP PROTOCOL --- 
+           =========================================================
+        */
+        let idleTime = 0;
+        const idleLimit = 5000; // 5 Seconds to sleep
+        let isNapping = false;
+        let zzzInterval;
+
+        // Reset the idle timer on user interaction
+        function resetIdle() {
+            idleTime = 0;
+            if(isNapping) wakeUp();
+        }
+
+        // Wake Up Routine
+        function wakeUp() {
+            isNapping = false;
+            document.body.classList.remove('napping');
+            clearInterval(zzzInterval);
+            
+            // Clear bubbles immediately
+            gsap.to(".zzz", { opacity: 0, onComplete: () => { 
+                const container = document.querySelector('.zzz-container');
+                if(container) container.innerHTML = ''; 
+            }});
+            
+            // Play Bark (Automatic Wake Up Sound)
+            if(barkSfx) { barkSfx.currentTime = 0; barkSfx.play().catch(()=>{}); }
+        }
+
+        // Go to Sleep Routine
+        function goToSleep() {
+            if(isNapping) return;
+            isNapping = true;
+            document.body.classList.add('napping');
+            
+            // Start bubbling Zzzs
+            zzzInterval = setInterval(() => {
+                if(!isNapping) return;
+                spawnZzz();
+            }, 800);
+        }
+
+        // Spawn a Z bubble
+        function spawnZzz() {
+            const container = document.querySelector('.zzz-container');
+            if(!container) return;
+            
+            const z = document.createElement('div');
+            z.innerText = 'Z';
+            z.className = 'zzz';
+            
+            // Random offset for natural feel
+            const offset = Math.random() * 40 - 20;
+            z.style.left = offset + 'px';
+            container.appendChild(z);
+
+            // Animate Up & Fade
+            gsap.fromTo(z, 
+                { y: 0, x: 0, opacity: 0, scale: 0.5 },
+                { 
+                    y: -150, 
+                    x: 30 + offset, 
+                    opacity: 1, 
+                    scale: 1.5, 
+                    duration: 2, 
+                    ease: "power1.out", 
+                    onComplete: () => { 
+                        gsap.to(z, { 
+                            opacity: 0, 
+                            duration: 0.5, 
+                            onComplete: () => z.remove() 
+                        }) 
+                    } 
+                }
+            );
+        }
+
+        // Idle Check Loop
+        setInterval(() => {
+            idleTime += 1000;
+            if(idleTime >= idleLimit && !isNapping) {
+                goToSleep();
+            }
+        }, 1000);
+
+        // Listeners
+        window.addEventListener('mousemove', resetIdle);
+        window.addEventListener('scroll', resetIdle);
+        window.addEventListener('keydown', resetIdle);
+        window.addEventListener('click', resetIdle);
 
     </script>
 </body>
