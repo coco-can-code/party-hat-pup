@@ -25,6 +25,7 @@
             --text-main: #1A1A1A; 
             --text-sub: #666666;
             --accent: #00CC96;
+            --love: #FF4D4D;
             --line: rgba(0,0,0,0.06);
         }
 
@@ -39,42 +40,29 @@
             transition: background-color 0.5s ease;
         }
 
-        /* --- NAP MODE STYLES (NEW) --- */
+        /* --- NAP MODE STYLES --- */
         #nap-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(10, 10, 10, 0.90); /* Deep dark overlay */
-            z-index: 999; /* Below sticker when napping, above content */
-            opacity: 0;
-            pointer-events: none;
+            background: rgba(10, 10, 10, 0.90);
+            z-index: 999; opacity: 0; pointer-events: none;
             transition: opacity 0.8s ease;
         }
-
-        /* When Napping is Active */
         body.napping #nap-overlay { opacity: 1; pointer-events: auto; }
-        
-        /* Spotlight the Dog */
-        body.napping .sticker-container { 
-            z-index: 1000; 
-            filter: drop-shadow(0 0 30px rgba(0, 204, 150, 0.6)); /* Green glow */
+        body.napping .sticker-container { z-index: 1000; filter: drop-shadow(0 0 30px rgba(0, 204, 150, 0.6)); }
+
+        .zzz-container {
+            position: absolute; top: -20px; right: 80px; width: 50px; height: 100px;
+            pointer-events: none; z-index: 1001;
+        }
+        .zzz {
+            position: absolute; font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+            color: var(--accent); font-size: 2rem; opacity: 0;
         }
 
-        /* Zzz Bubbles */
-        .zzz-container {
-            position: absolute;
-            top: -20px; 
-            right: 80px; /* Position near head */
-            width: 50px; height: 100px;
-            pointer-events: none;
-            z-index: 1001;
-        }
-        
-        .zzz {
-            position: absolute;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            color: var(--accent);
-            font-size: 2rem;
-            opacity: 0;
+        /* --- PETTING PROTOCOL HEARTS --- */
+        .heart-particle {
+            position: absolute; font-size: 1.5rem; color: var(--love);
+            pointer-events: none; z-index: 2000; user-select: none;
         }
 
         /* --- 2. PRELOADER --- */
@@ -112,7 +100,7 @@
         .log-success { color: var(--accent); }
         .log-error { color: #FF4444; }
 
-        /* --- 4. HEADER (SMART NAV) --- */
+        /* --- 4. HEADER (SMART NAV - UPDATED) --- */
         .top-bar {
             position: fixed; top: 0; left: 0; width: 100%;
             display: flex; justify-content: space-between; align-items: center;
@@ -121,7 +109,8 @@
         }
         .nav-hidden { transform: translateY(-100%); opacity: 0; }
         
-        .logo-text, .status-pill { pointer-events: auto; }
+        .logo-text, .nav-right, .status-pill, .nav-cta { pointer-events: auto; }
+        
         .logo-text {
             font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.2rem;
             letter-spacing: -1px; color: var(--text-main); white-space: nowrap;
@@ -130,16 +119,43 @@
             transition: transform 0.1s ease; user-select: none; display: inline-block; 
         }
         .logo-text:hover { cursor: pointer; background: rgba(255,255,255,0.8); }
+
+        /* NAV RIGHT CONTAINER */
+        .nav-right {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
         .status-pill {
             font-family: 'Courier New', monospace; font-size: 0.75rem;
             background: rgba(255,255,255,0.5); backdrop-filter: blur(5px);
-            padding: 8px 12px; border-radius: 50px; border: 1px solid rgba(0,0,0,0.05);
+            padding: 10px 16px; border-radius: 50px; border: 1px solid rgba(0,0,0,0.05);
             display: flex; align-items: center; gap: 8px; color: var(--text-sub); white-space: nowrap;
         }
+        
+        /* NEW TOP RIGHT CTA BUTTON */
+        .nav-cta {
+            font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 0.85rem;
+            background: var(--text-main); color: white;
+            padding: 10px 20px; border-radius: 50px;
+            text-decoration: none; text-transform: uppercase;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .nav-cta:hover {
+            background: var(--accent);
+            color: black;
+            transform: translateY(-2px);
+        }
+
         .blink-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: blink 2s infinite; }
+        
         @media (max-width: 480px) {
             .top-bar { padding: 15px 5%; }
             .logo-text { font-size: 1rem; padding: 8px 16px; }
+            .status-pill { display: none; } /* Hide Status on tiny screens to fit button */
+            .nav-cta { padding: 8px 16px; font-size: 0.75rem; }
         }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
@@ -153,7 +169,7 @@
         .sticker-container img { width: 100%; display: block; pointer-events: none; }
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-15px); } 100% { transform: translateY(0px); } }
         
-        /* DESKTOP POSITION (RIGHT) - 8% TOP */
+        /* DESKTOP POSITION (RIGHT) */
         .s-2 { 
             top: 8%;       
             right: 5%;     
@@ -204,14 +220,7 @@
 
         .tag { padding: 8px 16px; border: 1px solid rgba(0,0,0,0.1); border-radius: 50px; font-size: 14px; text-transform: uppercase; margin-bottom: 30px; display: inline-block; color: var(--text-sub); }
 
-        /* BUTTON CONTAINER */
-        .hero-btn-container {
-            margin-top: 60px; /* Default Desktop Gap */
-            text-align: center;
-            width: 100%;
-            position: relative;
-            z-index: 20; 
-        }
+        /* BUTTON CONTAINER REMOVED - BUTTON MOVED TO NAV */
 
         /* --- 8. TICKER STRIP --- */
         .marquee-strip {
@@ -265,12 +274,6 @@
                 top: 18%; 
                 right: 5%; 
             } 
-            
-            /* 3. BUTTON PUSHED DOWN */
-            .hero-btn-container {
-                margin-top: 80px !important; 
-                margin-bottom: 20px;
-            }
 
             .marquee-strip { margin-top: 20px !important; }
             .bento-grid { display: flex !important; flex-direction: column; height: auto; gap: 15px; }
@@ -329,7 +332,11 @@
 
     <nav class="top-bar" id="navbar">
         <div class="logo-text magnet-target">$PHP</div>
-        <div class="status-pill"><span class="blink-dot"></span><span class="sys-text">SYSTEM_</span>ONLINE</div>
+        
+        <div class="nav-right">
+            <div class="status-pill"><span class="blink-dot"></span><span class="sys-text">SYSTEM_</span>ONLINE</div>
+            <a href="dashboard_coco.html" class="nav-cta magnet-target">Initialize Dashboard</a>
+        </div>
     </nav>
 
     <div class="sticker-container s-2" id="sticker-2" data-speed="0.8"> 
@@ -346,10 +353,7 @@
         <h1 class="hero-title"><span class="reveal-text">HAT</span></h1>
         <h1 class="hero-title"><span class="reveal-text" style="color: var(--accent);">PUP</span></h1>
         
-        <div class="hero-btn-container">
-            <a href="https://jupiter.ag" class="btn-magnet magnet-target">Initialize Dashboard</a>
-        </div>
-    </section>
+        </section>
 
     <div class="marquee-strip">
         <div class="marquee-track">
@@ -576,112 +580,149 @@
             lastScrollY = currentScrollY;
         });
 
-        // --- 6. STICKER BARK INTERACTION ---
-        const mainSticker = document.getElementById('sticker-2');
-        const barkSfx = document.getElementById('bark-audio');
-
-        if (mainSticker && barkSfx) {
-            mainSticker.addEventListener('click', () => {
-                barkSfx.currentTime = 0;
-                barkSfx.play().catch(() => {});
-                
-                // Add a little visual "squish" on tap
-                gsap.to(mainSticker, { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1 });
-            });
-        }
-
-        /* =========================================================
-           --- 7. GOD TIER FEATURE: THE IDLE NAP PROTOCOL --- 
-           =========================================================
-        */
+        // --- 6. NAP PROTOCOL (UPDATED WITH SCROLL/TOUCH FIX) --- 
         let idleTime = 0;
-        const idleLimit = 5000; // 5 Seconds to sleep
+        const idleLimit = 5000; 
         let isNapping = false;
         let zzzInterval;
+        const barkSfx = document.getElementById('bark-audio');
 
-        // Reset the idle timer on user interaction
         function resetIdle() {
             idleTime = 0;
             if(isNapping) wakeUp();
         }
 
-        // Wake Up Routine
         function wakeUp() {
             isNapping = false;
             document.body.classList.remove('napping');
             clearInterval(zzzInterval);
-            
-            // Clear bubbles immediately
-            gsap.to(".zzz", { opacity: 0, onComplete: () => { 
-                const container = document.querySelector('.zzz-container');
-                if(container) container.innerHTML = ''; 
-            }});
-            
-            // Play Bark (Automatic Wake Up Sound)
+            gsap.to(".zzz", { opacity: 0, onComplete: () => { document.querySelector('.zzz-container').innerHTML = ''; }});
             if(barkSfx) { barkSfx.currentTime = 0; barkSfx.play().catch(()=>{}); }
         }
 
-        // Go to Sleep Routine
         function goToSleep() {
             if(isNapping) return;
             isNapping = true;
             document.body.classList.add('napping');
-            
-            // Start bubbling Zzzs
-            zzzInterval = setInterval(() => {
-                if(!isNapping) return;
-                spawnZzz();
-            }, 800);
+            zzzInterval = setInterval(() => { if(!isNapping) return; spawnZzz(); }, 800);
         }
 
-        // Spawn a Z bubble
         function spawnZzz() {
             const container = document.querySelector('.zzz-container');
             if(!container) return;
-            
             const z = document.createElement('div');
-            z.innerText = 'Z';
-            z.className = 'zzz';
-            
-            // Random offset for natural feel
+            z.innerText = 'Z'; z.className = 'zzz';
             const offset = Math.random() * 40 - 20;
             z.style.left = offset + 'px';
             container.appendChild(z);
-
-            // Animate Up & Fade
-            gsap.fromTo(z, 
-                { y: 0, x: 0, opacity: 0, scale: 0.5 },
-                { 
-                    y: -150, 
-                    x: 30 + offset, 
-                    opacity: 1, 
-                    scale: 1.5, 
-                    duration: 2, 
-                    ease: "power1.out", 
-                    onComplete: () => { 
-                        gsap.to(z, { 
-                            opacity: 0, 
-                            duration: 0.5, 
-                            onComplete: () => z.remove() 
-                        }) 
-                    } 
-                }
-            );
+            gsap.fromTo(z, { y: 0, x: 0, opacity: 0, scale: 0.5 }, { y: -150, x: 30 + offset, opacity: 1, scale: 1.5, duration: 2, ease: "power1.out", onComplete: () => { gsap.to(z, { opacity: 0, duration: 0.5, onComplete: () => z.remove() }) } });
         }
 
-        // Idle Check Loop
-        setInterval(() => {
-            idleTime += 1000;
-            if(idleTime >= idleLimit && !isNapping) {
-                goToSleep();
-            }
-        }, 1000);
-
-        // Listeners
+        setInterval(() => { idleTime += 1000; if(idleTime >= idleLimit && !isNapping) goToSleep(); }, 1000);
+        
+        // ADDED: Scroll and TouchStart to prevent napping while scrolling
         window.addEventListener('mousemove', resetIdle);
-        window.addEventListener('scroll', resetIdle);
         window.addEventListener('keydown', resetIdle);
         window.addEventListener('click', resetIdle);
+        window.addEventListener('scroll', resetIdle);
+        window.addEventListener('touchstart', resetIdle);
+
+        /* =========================================================
+           --- 7. GOD TIER FEATURE: THE PETTING PROTOCOL --- 
+           =========================================================
+        */
+        const mainSticker = document.getElementById('sticker-2');
+        let petVelocity = 0;
+        let lastMouseX = 0;
+        let isPetting = false;
+
+        // Scrub Detection
+        mainSticker.addEventListener('mousemove', (e) => {
+            const delta = Math.abs(e.clientX - lastMouseX);
+            petVelocity += delta;
+            lastMouseX = e.clientX;
+
+            // Threshold to trigger "Pet" state
+            if (petVelocity > 50 && !isPetting) {
+                startPetting();
+            }
+        });
+
+        // Decay velocity
+        setInterval(() => {
+            if (petVelocity > 0) petVelocity -= 20;
+            if (petVelocity < 0) petVelocity = 0;
+            if (petVelocity < 20 && isPetting) stopPetting();
+        }, 100);
+
+        function startPetting() {
+            isPetting = true;
+            
+            // Wiggle Dog
+            gsap.to(mainSticker, { 
+                rotation: "+=5", 
+                duration: 0.1, 
+                yoyo: true, 
+                repeat: -1 
+            });
+
+            // Spawn Hearts Loop
+            petInterval = setInterval(spawnHeart, 100);
+        }
+
+        function stopPetting() {
+            isPetting = false;
+            clearInterval(petInterval);
+            gsap.to(mainSticker, { rotation: -10, duration: 0.5, ease: "power2.out" }); // Return to base rotation
+        }
+
+        let petInterval;
+        function spawnHeart() {
+            const container = document.body;
+            const rect = mainSticker.getBoundingClientRect();
+            
+            const heart = document.createElement('div');
+            heart.className = 'heart-particle';
+            const emojis = ['❤️', '✨', '🐶', '💖'];
+            heart.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+            
+            // Random position near head
+            const x = rect.left + rect.width / 2 + (Math.random() * 100 - 50);
+            const y = rect.top + 50 + (Math.random() * 50);
+            
+            heart.style.left = x + 'px';
+            heart.style.top = y + 'px';
+            container.appendChild(heart);
+
+            // Float Up
+            gsap.to(heart, {
+                y: -200,
+                x: (Math.random() * 100 - 50),
+                opacity: 0,
+                scale: 1.5,
+                duration: 1.5,
+                ease: "power1.out",
+                onComplete: () => heart.remove()
+            });
+        }
+
+        // Also Click to Bark (Legacy Feature)
+        mainSticker.addEventListener('click', () => {
+            if(barkSfx) { barkSfx.currentTime = 0; barkSfx.play().catch(()=>{}); }
+            gsap.to(mainSticker, { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1 });
+        });
+
+        /* --- 8. BROWSER SEPARATION ANXIETY --- */
+        const originalTitle = document.title;
+        const sadTitles = ["Coco misses you... 🥺", "Don't leave me! 🦴", "Nap time? 💤", "Where are you? 🐾"];
+        
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                document.title = sadTitles[Math.floor(Math.random() * sadTitles.length)];
+            } else {
+                document.title = originalTitle;
+            }
+        });
 
     </script>
 </body>

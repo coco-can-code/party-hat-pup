@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bio-Monitor | Subject 001</title>
+    
+    <link rel="icon" type="image/png" href="coco_sticker_1.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600&family=Space+Grotesk:wght@300;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* --- BIO-LAB DESIGN SYSTEM --- */
+        * { box-sizing: border-box; }
+
+        :root {
+            --bg: #F0F2F5; 
+            --panel-bg: #FFFFFF;
+            --text-main: #2D3436; 
+            --text-sub: #636E72;
+            --accent: #00CC96; 
+            --alert: #FF7675;  
+            --grid-line: rgba(0,0,0,0.05);
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'JetBrains Mono', monospace; 
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- BACKGROUND GRID --- */
+        .bio-grid-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* --- LAYOUT --- */
+        .lab-container {
+            display: grid;
+            grid-template-columns: 400px 1fr; 
+            gap: 20px;
+            padding: 90px 20px 20px 20px; /* Top padding for Nav */
+            height: 100vh;
+            max-width: 1920px;
+            margin: 0 auto;
+        }
+
+        /* --- NAV BAR (MATCHING OTHER PAGES) --- */
+        .top-bar {
+            position: fixed; top: 0; left: 0; width: 100%;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 2.5%; z-index: 100;
+            pointer-events: none; 
+        }
+        
+        .nav-back-pill {
+            pointer-events: auto;
+            font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1rem;
+            color: var(--text-main); text-decoration: none;
+            background: rgba(255,255,255,0.8); backdrop-filter: blur(5px);
+            padding: 10px 24px; border-radius: 50px; border: 1px solid rgba(0,0,0,0.05);
+            transition: transform 0.1s ease, background 0.2s; 
+            display: flex; align-items: center; gap: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        .nav-back-pill:hover { background: #fff; transform: scale(1.02); }
+
+        .nav-title-pill {
+            pointer-events: auto;
+            font-family: 'Courier New', monospace; font-size: 0.75rem;
+            background: rgba(255,255,255,0.8); backdrop-filter: blur(5px);
+            padding: 10px 16px; border-radius: 50px; border: 1px solid rgba(0,0,0,0.05);
+            display: flex; align-items: center; gap: 8px; color: var(--text-sub); white-space: nowrap;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .live-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 10px var(--accent); animation: blink 1s infinite; }
+
+        /* --- LEFT PANEL: SUBJECT VISUAL --- */
+        .subject-panel {
+            background: var(--panel-bg);
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 4px;
+            padding: 20px;
+            display: flex; flex-direction: column; gap: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+        }
+
+        .scan-container {
+            position: relative;
+            width: 100%; height: 400px;
+            background: #000;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid var(--accent);
+        }
+
+        .subject-img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            filter: grayscale(100%) contrast(1.2); 
+            opacity: 0.8;
+        }
+
+        .scanner-bar {
+            position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+            animation: scan 3s linear infinite;
+            z-index: 10;
+        }
+
+        .subject-stats {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+            font-size: 0.8rem;
+        }
+        .stat-row { display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(0,0,0,0.1); padding-bottom: 5px; }
+
+        /* --- RIGHT PANEL: VITALS --- */
+        .vitals-panel {
+            background: var(--panel-bg);
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 4px;
+            padding: 30px;
+            display: flex; flex-direction: column; gap: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+        }
+
+        /* ECG Chart Area */
+        .ecg-container {
+            width: 100%; height: 300px;
+            position: relative;
+            border: 1px solid rgba(0,0,0,0.05);
+            background: rgba(0, 204, 150, 0.02); 
+            padding: 10px;
+        }
+
+        .section-label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.2rem; font-weight: 700; color: var(--text-main);
+            border-left: 4px solid var(--accent); padding-left: 10px;
+            margin-bottom: 15px;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+        }
+        .metric-box {
+            border: 1px solid rgba(0,0,0,0.1); padding: 20px;
+            border-radius: 4px; text-align: center;
+            transition: all 0.3s ease;
+        }
+        .metric-box:hover { border-color: var(--accent); background: rgba(0,204,150,0.05); }
+        .metric-label { font-size: 0.7rem; color: var(--text-sub); margin-bottom: 5px; text-transform: uppercase; }
+        .metric-value { font-size: 1.5rem; font-weight: 700; color: var(--text-main); font-family: 'Space Grotesk'; }
+
+        /* --- ACTION BUTTON --- */
+        .btn-dose {
+            margin-top: auto;
+            background: var(--text-main);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            text-decoration: none;
+            font-weight: 700; letter-spacing: 2px;
+            text-transform: uppercase;
+            border-radius: 4px;
+            transition: all 0.3s;
+            position: relative; overflow: hidden;
+        }
+        .btn-dose:hover { background: var(--accent); color: black; letter-spacing: 3px; }
+        
+        /* --- ANIMATIONS --- */
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @keyframes scan { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+
+        /* --- MOBILE RESPONSIVE --- */
+        @media (max-width: 1024px) {
+            body, html { height: auto; overflow-y: auto; }
+            .lab-container { grid-template-columns: 1fr; grid-template-rows: auto; height: auto; display: flex; flex-direction: column; }
+            .metrics-grid { grid-template-columns: 1fr; }
+            .scan-container { height: 300px; }
+            
+            .top-bar {
+                flex-direction: column; gap: 10px; padding: 15px 5%;
+                background: linear-gradient(to bottom, rgba(240, 242, 245, 0.95), transparent);
+            }
+            .nav-back-pill, .nav-title-pill { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bio-grid-bg"></div>
+
+    <nav class="top-bar">
+        <a href="index.html" class="nav-back-pill">
+            ← Terminate Session
+        </a>
+
+        <div class="nav-title-pill">
+            <span class="live-dot"></span> SUBJECT 001 // BIO-MONITOR
+        </div>
+    </nav>
+
+    <div class="lab-container">
+        
+        <aside class="subject-panel">
+            <div style="font-size: 0.7rem; color: var(--text-sub);">VISUAL FEED // LIVE</div>
+            
+            <div class="scan-container">
+                <div class="scanner-bar"></div>
+                <img src="coco_main.jpg" class="subject-img" alt="Subject">
+                
+                <div style="position: absolute; bottom: 10px; left: 10px; color: var(--accent); font-size: 0.7rem;">
+                    TARGET_LOCKED<br>
+                    CONFIDENCE: 98%
+                </div>
+            </div>
+
+            <div class="subject-stats">
+                <div class="stat-row"><span>NAME</span> <span>COCO ($PHP)</span></div>
+                <div class="stat-row"><span>SPECIES</span> <span>CANIS LUPUS</span></div>
+                <div class="stat-row"><span>STATUS</span> <span style="color: var(--accent);">STABLE</span></div>
+                <div class="stat-row"><span>AGE</span> <span>Unknown</span></div>
+                <div class="stat-row"><span>ORIGIN</span> <span>SOLANA</span></div>
+                <div class="stat-row"><span>MOOD</span> <span>SERENE</span></div>
+            </div>
+        </aside>
+
+        <main class="vitals-panel">
+            
+            <div>
+                <div class="section-label">CARDIAC RHYTHM (PRICE ACTION)</div>
+                <div class="ecg-container">
+                    <canvas id="ecgChart"></canvas>
+                </div>
+            </div>
+
+            <div>
+                <div class="section-label">CIRCULATORY METRICS</div>
+                <div class="metrics-grid">
+                    <div class="metric-box">
+                        <div class="metric-label">Circulation Pressure (MCAP)</div>
+                        <div class="metric-value">$420K</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Hydration Level (LIQ)</div>
+                        <div class="metric-value">$85K</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Cell Count (HOLDERS)</div>
+                        <div class="metric-value">1,337</div>
+                    </div>
+                </div>
+            </div>
+
+            <a href="https://jup.ag/swap/SOL-JUP" target="_blank" class="btn-dose">
+                ✚ Administer Dose ($PHP)
+            </a>
+
+        </main>
+
+    </div>
+
+    <script>
+        // --- ECG CHART LOGIC ---
+        const ctx = document.getElementById('ecgChart').getContext('2d');
+        const initialData = Array(100).fill(50);
+        
+        const ecgChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array(100).fill(''),
+                datasets: [{
+                    data: initialData,
+                    borderColor: '#00CC96',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.1, 
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { 
+                    x: { display: false }, 
+                    y: { display: false, min: 0, max: 100 } 
+                },
+                animation: { duration: 0 }
+            }
+        });
+
+        let tick = 0;
+        setInterval(() => {
+            tick++;
+            let val = 50;
+            if (tick % 20 === 0) val = 80;
+            else if (tick % 20 === 1) val = 20;
+            else if (tick % 20 === 2) val = 70;
+            else if (tick % 20 === 3) val = 40;
+            else { val = 50 + (Math.random() - 0.5) * 10; }
+
+            ecgChart.data.datasets[0].data.shift();
+            ecgChart.data.datasets[0].data.push(val);
+            ecgChart.update();
+        }, 50);
+
+        // --- BROWSER SEPARATION ---
+        const originalTitle = document.title;
+        const sadTitles = ["SUBJECT VITALS DROPPING...", "CONNECTION LOST...", "RETURN TO LAB ⚠️"];
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                document.title = sadTitles[Math.floor(Math.random() * sadTitles.length)];
+            } else {
+                document.title = originalTitle;
+            }
+        });
+    </script>
+</body>
+</html>

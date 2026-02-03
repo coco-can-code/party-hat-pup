@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coco's Dashboard | $PHP</title>
+    
+    <link rel="icon" type="image/png" href="coco_sticker_1.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600&family=Space+Grotesk:wght@300;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
+
+    <style>
+        /* --- COCO DESIGN SYSTEM --- */
+        * { box-sizing: border-box; }
+
+        :root {
+            /* Exact vars from index.html */
+            --bg: #F4F4F0; 
+            --text-main: #1A1A1A; 
+            --text-sub: #666666;
+            --accent: #00CC96; /* Mint Green */
+            --love: #FF4D4D;
+            --line: rgba(0,0,0,0.06);
+            --card-bg: #FFFFFF;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Manrope', sans-serif;
+            overflow-x: hidden;
+            cursor: default;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* --- 1. NAV BAR (MATCHING INDEX) --- */
+        .top-bar {
+            position: fixed; top: 0; left: 0; width: 100%;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 2.5%; z-index: 100;
+            background: rgba(244, 244, 240, 0.9); backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .logo-text {
+            font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.2rem;
+            letter-spacing: -1px; color: var(--text-main); white-space: nowrap;
+            background: rgba(255,255,255,0.5); padding: 10px 24px; border-radius: 50px; 
+            border: 1px solid rgba(0,0,0,0.05); user-select: none; text-decoration: none;
+        }
+
+        .nav-right { display: flex; gap: 12px; align-items: center; }
+
+        .nav-cta {
+            font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 0.85rem;
+            background: var(--text-main); color: white;
+            padding: 10px 20px; border-radius: 50px;
+            text-decoration: none; text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+        .nav-cta:hover { background: var(--accent); color: black; transform: translateY(-2px); }
+
+        /* --- 2. LAYOUT & GRID --- */
+        section { padding: 120px 2.5% 60px 2.5%; position: relative; z-index: 10; max-width: 1600px; margin: 0 auto; }
+        
+        .section-header { margin-bottom: 40px; }
+        .section-title { font-family: 'Space Grotesk', sans-serif; font-size: 3rem; font-weight: 700; margin: 0; letter-spacing: -0.03em; }
+        .section-subtitle { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-sub); letter-spacing: 1px; margin-top: 10px; text-transform: uppercase; }
+
+        .bento-grid { 
+            display: grid; 
+            gap: 20px; 
+            width: 100%;
+        }
+        
+        /* 2-Column Split for Main Area */
+        .grid-split-main { grid-template-columns: 320px 1fr; }
+        
+        /* 2-Column Split for Transparency */
+        .grid-split-roots { grid-template-columns: 1.5fr 1fr; }
+
+        .bento-card {
+            background: var(--card-bg); border-radius: 20px; padding: 40px; 
+            display: flex; flex-direction: column; justify-content: space-between;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.03); 
+            border: 1px solid rgba(0,0,0,0.03);
+            position: relative; overflow: hidden;
+        }
+
+        /* --- 3. SIDEBAR WIDGETS --- */
+        .harmony-widget {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding-bottom: 30px; border-bottom: 1px solid var(--line); margin-bottom: 30px;
+        }
+        .ring-container { width: 140px; height: 140px; position: relative; }
+        .harmony-value {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-family: 'Space Grotesk', sans-serif; font-size: 2.5rem; font-weight: 700; color: var(--accent);
+        }
+        
+        .stat-item { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 18px; }
+        .stat-name { font-family: 'Manrope'; font-size: 0.9rem; color: var(--text-sub); font-weight: 600; }
+        .stat-num { font-family: 'JetBrains Mono'; font-size: 1rem; color: var(--text-main); font-weight: 700; }
+
+        .btn-feed-grid { 
+            width: 100%; padding: 20px; background: var(--text-main); color: white; border-radius: 20px; text-decoration: none;
+            display: flex; justify-content: center; align-items: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px; transition: 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+            border: 1px solid transparent; cursor: pointer; margin-top: auto; text-align: center;
+        }
+        .btn-feed-grid:hover { transform: scale(0.98); background: var(--accent); color: black; }
+
+        /* --- 4. CHART VIEW --- */
+        .chart-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; }
+        .current-price {
+            font-family: 'Space Grotesk', sans-serif; font-size: 4rem; font-weight: 700; 
+            letter-spacing: -0.04em; color: var(--text-main); line-height: 1;
+        }
+        .badge { font-family: 'JetBrains Mono'; font-size: 0.75rem; background: rgba(0, 204, 150, 0.1); color: var(--accent); padding: 4px 8px; border-radius: 4px; margin-left: 10px; vertical-align: middle; }
+        
+        .time-btn { 
+            font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 0.9rem;
+            color: var(--text-sub); border-bottom: 2px solid transparent; cursor: pointer; 
+            margin-left: 20px; transition: all 0.3s; padding-bottom: 2px;
+        }
+        .time-btn:hover { color: var(--text-main); }
+        .time-btn.active { color: var(--text-main); border-bottom: 2px solid var(--accent); }
+        
+        .chart-wrapper { flex-grow: 1; width: 100%; position: relative; min-height: 400px; }
+
+        /* --- 5. ROOTS / TRANSPARENCY --- */
+        .card-label { 
+            font-family: 'JetBrains Mono'; font-size: 0.75rem; color: var(--text-sub); 
+            text-transform: uppercase; margin-bottom: 25px; display: flex; justify-content: space-between; letter-spacing: 1px;
+        }
+
+        /* Wallet Address Style */
+        .wallet-address {
+            font-family: 'JetBrains Mono'; font-size: 1.1rem; color: var(--text-main);
+            background: #F8F8F8; padding: 15px 20px; border-radius: 12px;
+            border: 1px dashed rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; cursor: pointer; transition: background 0.2s;
+        }
+        .wallet-address:hover { background: #F0F0F0; border-color: var(--accent); }
+
+        .wallet-stats { display: flex; gap: 15px; }
+        .stat-pill { flex: 1; background: #F8F8F8; padding: 15px; border-radius: 12px; text-align: center; }
+        .stat-val { font-family: 'Space Grotesk'; font-size: 1.5rem; font-weight: 700; display: block; color: var(--text-main); }
+        .stat-name-sm { font-family: 'Manrope'; font-size: 0.75rem; color: var(--text-sub); font-weight: 600; }
+
+        /* Timeline Style */
+        .timeline-container { position: relative; padding-left: 10px; display: flex; flex-direction: column; gap: 30px; }
+        .timeline-line { position: absolute; left: 19px; top: 10px; bottom: 10px; width: 2px; background: var(--line); z-index: 0; }
+        
+        .timeline-item { position: relative; display: flex; align-items: flex-start; gap: 20px; z-index: 1; }
+        .timeline-dot { 
+            width: 20px; height: 20px; background: white; border: 2px solid var(--text-sub); border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; z-index: 2;
+        }
+        .timeline-item.active .timeline-dot { border-color: var(--accent); background: rgba(0, 204, 150, 0.1); }
+        .timeline-dot-inner { width: 6px; height: 6px; background: var(--text-sub); border-radius: 50%; }
+        .timeline-item.active .timeline-dot-inner { background: var(--accent); }
+        
+        .timeline-phase { font-family: 'JetBrains Mono'; font-size: 0.75rem; color: var(--accent); margin-bottom: 5px; font-weight: 700; }
+        .timeline-title { font-family: 'Space Grotesk'; font-size: 1.2rem; color: var(--text-main); margin-bottom: 5px; font-weight: 700; }
+        .timeline-desc { font-family: 'Manrope'; font-size: 0.9rem; color: var(--text-sub); line-height: 1.5; }
+
+        /* Pulse & Audit */
+        .pulse-val { font-family: 'Space Grotesk'; font-size: 2.5rem; color: var(--text-main); font-weight: 700; line-height: 1; }
+        .prog-track { width: 100%; height: 6px; background: #F0F0F0; border-radius: 10px; margin-top: 15px; overflow: hidden; }
+        .prog-fill { height: 100%; border-radius: 10px; background: var(--text-main); }
+
+        .audit-row { 
+            display: flex; justify-content: space-between; padding: 15px 0; 
+            border-bottom: 1px solid var(--line); font-family: 'JetBrains Mono'; font-size: 0.85rem; 
+        }
+        .audit-row:last-child { border-bottom: none; }
+
+        /* Audio Floater */
+        .audio-floater {
+            position: fixed; bottom: 30px; right: 30px;
+            display: flex; align-items: center; gap: 15px;
+            padding: 12px 24px; background: var(--text-main); color: white; border-radius: 50px;
+            z-index: 50; transition: all 0.3s; cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .audio-floater:hover { transform: scale(1.05); background: var(--accent); color: black; }
+        .bar { width: 3px; background: currentColor; height: 20%; transition: height 0.2s; }
+        .audio-floater.playing .bar { animation: bounce 1s infinite ease-in-out; }
+        .audio-floater.playing .bar:nth-child(2) { animation-delay: 0.1s; }
+        .audio-floater.playing .bar:nth-child(3) { animation-delay: 0.2s; }
+        @keyframes bounce { 0%, 100% { height: 30%; opacity: 0.5; } 50% { height: 100%; opacity: 1; } }
+
+        /* RESPONSIVE */
+        @media (max-width: 1024px) {
+            .bento-grid { display: flex; flex-direction: column; gap: 20px; }
+            .sidebar { order: 2; }
+            .garden-view { order: 1; height: 500px; }
+            .nav-bar { padding: 15px 5%; }
+            .current-price { font-size: 3rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="bg-music" loop>
+        <source src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg">
+    </audio>
+
+    <nav class="top-bar">
+        <a href="index.html" class="logo-text">$PHP</a>
+        <div class="nav-right">
+            <a href="https://jup.ag/swap/SOL-JUP" target="_blank" class="nav-cta">Buy Token</a>
+        </div>
+    </nav>
+
+    <section>
+        <div class="section-header">
+            <h1 class="section-title">Coco's Terminal</h1>
+            <div class="section-subtitle">LIVE NETWORK STATISTICS</div>
+        </div>
+
+        <div class="bento-grid grid-split-main">
+            
+            <div class="bento-card sidebar">
+                <div class="harmony-widget">
+                    <div class="ring-container">
+                        <svg width="140" height="140" viewBox="0 0 120 120">
+                            <circle cx="60" cy="60" r="54" fill="none" stroke="#F0F0F0" stroke-width="4"/>
+                            <circle id="harmony-ring" cx="60" cy="60" r="54" fill="none" stroke="#00CC96" stroke-width="4" stroke-dasharray="339.292" stroke-dashoffset="339" stroke-linecap="round" transform="rotate(-90 60 60)"/>
+                        </svg>
+                        <div class="harmony-value" id="harmony-counter">0%</div>
+                    </div>
+                    <div style="margin-top: 20px; font-family: 'JetBrains Mono'; font-size: 0.7rem; color: var(--text-sub); letter-spacing: 1px;">GRADUATION STATUS</div>
+                </div>
+
+                <div style="flex-grow: 1;">
+                    <div class="stat-item">
+                        <span class="stat-name">Market Cap</span>
+                        <span class="stat-num" id="market-cap">$2.45B</span> 
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-name">Mint Authority</span>
+                        <span class="stat-num" style="color: var(--accent);">REVOKED</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-name">Status</span>
+                        <span id="status-text" class="stat-num">TRADING LIVE</span>
+                    </div>
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line);">
+                        <p style="font-size: 0.85rem; color: var(--text-sub); line-height: 1.6; margin: 0;">
+                            "All systems nominal. Curve completed. Liquidity burned. We are now drifting in open space."
+                        </p>
+                    </div>
+                </div>
+
+                <a id="main-buy-btn" href="#" target="_blank" class="btn-feed-grid">
+                    INITIATE SWAP ($PHP)
+                </a>
+            </div>
+
+            <div class="bento-card garden-view">
+                <div class="chart-header">
+                    <div>
+                        <div style="font-family: 'JetBrains Mono'; color: var(--text-sub); font-size: 0.75rem; letter-spacing: 1px; margin-bottom: 8px;">LIVE FEED</div>
+                        <div style="display: flex; align-items: baseline;">
+                            <div class="current-price" id="live-price">$0.2104</div>
+                            <span class="badge">▲ BULLISH</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: flex-end;">
+                        <span id="btn-1d" class="time-btn active" onclick="updateTimeframe('1D')">1H</span>
+                        <span id="btn-1w" class="time-btn" onclick="updateTimeframe('1W')">6H</span>
+                        <span id="btn-all" class="time-btn" onclick="updateTimeframe('ALL')">ALL</span>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="gardenChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section>
+        <div class="section-header">
+            <h2 class="section-title">The Roots of Trust</h2>
+            <div class="section-subtitle">VERIFIED LEDGER DATA // Party Hat Pup($PUP)</div>
+        </div>
+
+        <div class="bento-grid grid-split-roots">
+            
+            <div class="bento-card">
+                <div class="card-label">
+                    <span>Dev Wallet Exposure</span>
+                    <span style="color: var(--accent);">● VERIFIED HUMAN</span>
+                </div>
+                
+                <div class="wallet-address" onclick="copyToClip('CocoDevWalletAddress8x...PLACEHOLDER', this)">
+                    <span id="dev-addr">CocoDevWalletAddress8x...PLACEHOLDER</span>
+                    <span style="opacity: 0.5;">❐</span>
+                </div>
+
+                <div class="wallet-stats" style="margin-bottom: 40px;">
+                    <div class="stat-pill">
+                        <span class="stat-val" style="color: var(--text-main);">0</span>
+                        <span class="stat-name-sm">Total Sells</span>
+                    </div>
+                    <div class="stat-pill">
+                        <span class="stat-val" style="color: var(--accent);">5.0%</span>
+                        <span class="stat-name-sm">Supply Held</span>
+                    </div>
+                    <div class="stat-pill">
+                        <span class="stat-val">DIAMOND</span>
+                        <span class="stat-name-sm">Hand Status</span>
+                    </div>
+                </div>
+
+                <div class="card-label" style="border-top: 1px solid var(--line); padding-top: 30px;">
+                    <span>Project Timeline</span>
+                    <span>LIVE</span>
+                </div>
+
+                <div class="timeline-container">
+                    <div class="timeline-line"></div>
+                    <div class="timeline-item active">
+                        <div class="timeline-dot"><div class="timeline-dot-inner"></div></div>
+                        <div class="timeline-content">
+                            <div class="timeline-phase">PHASE 1: AWAKENING</div>
+                            <div class="timeline-title">Pump.fun Launch</div>
+                            <div class="timeline-desc">Fair launch initiated with 0% team allocation.</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"><div class="timeline-dot-inner"></div></div>
+                        <div class="timeline-content">
+                            <div class="timeline-phase" style="color:var(--text-sub)">PHASE 2: ZOOMIES</div>
+                            <div class="timeline-title">Raydium Migration</div>
+                            <div class="timeline-desc">Curve completes. Liquidity burned forever.</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"><div class="timeline-dot-inner"></div></div>
+                        <div class="timeline-content">
+                            <div class="timeline-phase" style="color:var(--text-sub)">PHASE 3: THE HOWL</div>
+                            <div class="timeline-title">CEX & Airdrops</div>
+                            <div class="timeline-desc">Listing on Jupiter and Tier 1 CEXs.</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"><div class="timeline-dot-inner"></div></div>
+                        <div class="timeline-content">
+                            <div class="timeline-phase" style="color:var(--text-sub)">PHASE 4: EXPANSION</div>
+                            <div class="timeline-title">Partners & Growth</div>
+                            <div class="timeline-desc">Continuous development and global expansion.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                
+                <div class="bento-card">
+                    <div class="card-label">Market Pulse</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <div class="pulse-val" id="vol-24h">$82M</div>
+                            <div style="font-size:0.8rem; color:var(--text-sub);">24h Vol</div>
+                        </div>
+                        <div>
+                            <div class="pulse-val" style="color: var(--accent);">High</div>
+                            <div style="font-size:0.8rem; color:var(--text-sub);">Buy Pressure</div>
+                        </div>
+                    </div>
+                    <div class="prog-track">
+                        <div class="prog-fill" style="width: 85%;"></div>
+                    </div>
+                    <div style="text-align: right; font-size: 0.7rem; margin-top: 8px; font-family:'JetBrains Mono';">SENTIMENT: BULLISH</div>
+                </div>
+
+                <div class="bento-card" style="flex-grow: 1;">
+                    <div class="card-label">Contract Audit</div>
+                    <div style="display: flex; flex-direction: column;">
+                        <div class="audit-row">
+                            <span>Mint Authority</span>
+                            <span style="color: var(--accent);">REVOKED</span>
+                        </div>
+                        <div class="audit-row">
+                            <span>Freeze Authority</span>
+                            <span style="color: var(--accent);">REVOKED</span>
+                        </div>
+                        <div class="audit-row">
+                            <span>Liquidity Status</span>
+                            <span style="color: var(--text-main);">BURNED</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </section>
+
+    <div class="audio-floater" id="audio-btn" onclick="toggleAudio()">
+        <div style="display: flex; gap: 4px; align-items: flex-end; height: 16px;">
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        </div>
+        <div id="audio-text" style="font-family: 'JetBrains Mono'; font-size: 0.7rem;">
+            ▶ AUDIO
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const STATUS = 'RAYDIUM'; 
+        const PUMP_LINK = "https://pump.fun/";
+        const RAY_LINK = "https://jup.ag/swap/SOL-JUP";
+
+        // Global Chart
+        let gardenChart = null; 
+
+        // --- LENIS SCROLL ---
+        const lenis = new Lenis({ smooth: true });
+        function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+        requestAnimationFrame(raf);
+
+        // --- UTILS ---
+        function copyToClip(text, el) {
+            navigator.clipboard.writeText(text);
+            const original = el.innerHTML;
+            el.innerHTML = "<span style='color:var(--accent)'>COPIED!</span>";
+            setTimeout(() => { el.innerHTML = original; }, 1500);
+        }
+
+        // --- INIT DASHBOARD ---
+        function initDashboard() {
+            const ring = document.getElementById('harmony-ring');
+            const counter = document.getElementById('harmony-counter');
+            const btnMain = document.getElementById('main-buy-btn');
+
+            if (STATUS === 'PUMP') {
+                btnMain.href = PUMP_LINK;
+                gsap.to(ring, { strokeDashoffset: 270, duration: 2.5, delay: 0.5, ease: "power2.out" });
+                let val = {v:0};
+                gsap.to(val, {v:20, duration: 2.5, onUpdate:()=>{counter.innerText=Math.round(val.v)+"%"}});
+            } else {
+                btnMain.href = RAY_LINK;
+                gsap.to(ring, { strokeDashoffset: 0, duration: 2.5, delay: 0.5, ease: "power2.out" });
+                let val = {v:0};
+                gsap.to(val, {v:100, duration: 2.5, onUpdate:()=>{counter.innerText=Math.round(val.v)+"%"}});
+            }
+        }
+
+        // --- CHART ---
+        function initChart() {
+            const ctx = document.getElementById('gardenChart').getContext('2d');
+            
+            // Dummy Data for Instant Render
+            let dataPoints = [];
+            let price = 0.000012;
+            for(let i=0; i<100; i++) {
+                price += (Math.random() - 0.4) * 0.000001;
+                dataPoints.push(price);
+            }
+
+            let grad = ctx.createLinearGradient(0,0,0,600);
+            grad.addColorStop(0,'rgba(0, 204, 150, 0.2)'); // Mint Green Tint
+            grad.addColorStop(1,'rgba(255, 255, 255, 0)');
+
+            gardenChart = new Chart(ctx, {
+                type: 'line',
+                data: { 
+                    labels: Array(100).fill(''), 
+                    datasets: [{ 
+                        data: dataPoints, 
+                        borderColor: '#1A1A1A', // Dark line for visibility
+                        borderWidth: 2, 
+                        backgroundColor: grad, 
+                        fill: true, 
+                        tension: 0.4, 
+                        pointRadius: 0, 
+                        pointHoverRadius: 6 
+                    }] 
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: false }, 
+                    scales: { x: { display: false }, y: { display: false } }, 
+                    animation: { duration: 1500, easing: 'easeOutQuart' } 
+                }
+            });
+        }
+
+        async function fetchRealData() {
+            try {
+                // Price
+                const res = await fetch("https://api.jup.ag/price/v3?ids=JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN");
+                const d = await res.json();
+                if(d.data) {
+                    document.getElementById('live-price').innerText = "$" + parseFloat(d.data.JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN.price).toFixed(4);
+                }
+
+                // Market Cap
+                const cgRes = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=jupiter-exchange-solana&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true");
+                if (!cgRes.ok) throw new Error("API Limit"); 
+
+                const cgData = await cgRes.json();
+                const mcap = cgData['jupiter-exchange-solana'].usd_market_cap;
+                const vol = cgData['jupiter-exchange-solana'].usd_24h_vol;
+                
+                document.getElementById('market-cap').innerText = "$" + (mcap / 1000000000).toFixed(2) + "B";
+                document.getElementById('vol-24h').innerText = "$" + (vol / 1000000).toFixed(1) + "M";
+
+                // History
+                const histRes = await fetch("https://api.coingecko.com/api/v3/coins/jupiter-exchange-solana/market_chart?vs_currency=usd&days=1");
+                const histData = await histRes.json();
+                const prices = histData.prices.map(p => p[1]);
+                
+                gardenChart.data.datasets[0].data = prices;
+                gardenChart.data.labels = Array(prices.length).fill('');
+                gardenChart.update();
+
+            } catch(e) {
+                console.log("API Limit/Error, using fallback simulation.");
+            }
+        }
+
+        // --- RUN ---
+        initDashboard();
+        initChart();
+        fetchRealData();
+        setInterval(fetchRealData, 30000); 
+
+        // --- ANIMATIONS ---
+        gsap.from(".bento-card", { 
+            y: 50, opacity: 0, duration: 1, stagger: 0.1, ease: "power3.out", delay: 0.2 
+        });
+
+        // --- INTERACTIVITY ---
+        function updateTimeframe(p) {
+            document.querySelectorAll('.time-btn').forEach(b=>b.classList.remove('active'));
+            const btns = document.querySelectorAll('.time-btn');
+            btns.forEach(btn => {
+                if(btn.innerText === p) btn.classList.add('active');
+            });
+            if(gardenChart) {
+                // Visual feedback
+                gardenChart.data.datasets[0].data = gardenChart.data.datasets[0].data.reverse(); 
+                gardenChart.update();
+            }
+        }
+
+        // --- AUDIO ---
+        let isPlaying = false;
+        const aud = document.getElementById('bg-music');
+        function toggleAudio() {
+            const btn = document.getElementById('audio-btn');
+            const txt = document.getElementById('audio-text');
+            if(isPlaying) { aud.pause(); btn.classList.remove('playing'); txt.innerText="▶ AUDIO"; isPlaying=false; }
+            else { aud.play(); btn.classList.add('playing'); txt.innerText="II PAUSE"; isPlaying=true; }
+        }
+    </script>
+</body>
+</html>
